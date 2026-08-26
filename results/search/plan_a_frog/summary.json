@@ -1,0 +1,40 @@
+{
+  "name": "plan_a_frog",
+  "config": "search/plan_a_frog.yaml",
+  "generations": 50,
+  "population_size": 10,
+  "evaluated": 235,
+  "cache_hits": 275,
+  "failures": 0,
+  "elapsed_seconds": 494.9,
+  "runtime_per_individual": {
+    "n": 235,
+    "total": 494.61,
+    "mean": 2.105,
+    "min": 1.39,
+    "max": 3.223
+  },
+  "forget_class": 6,
+  "reference_checkpoint": "results/checkpoints/class6_frog_reference_best_dr.pt",
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.000885479268617928,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0009856052638497204,
+    "forget_test_acc": 0.973,
+    "forget_test_loss": 0.1127412805557251,
+    "retain_test_acc": 0.9451111111111111,
+    "retain_test_loss": 0.20789686595069037
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 10.038385391235352,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0006474088004324585,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 10.185290649414062,
+    "retain_test_acc": 0.9458888888888889,
+    "retain_test_loss": 0.21908223862118192
+  },
+  "front_size": 10
+}
