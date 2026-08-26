@@ -201,10 +201,17 @@ class ClassEvaluator:
         self.operator_allowlist = eval_cfg.get("operator_allowlist")
         self.max_level = eval_cfg.get("max_level")
         self.compute_mia = bool(eval_cfg.get("compute_mia", True))
+        #: Measure D_r_test on every candidate. A SEARCH sets this False --
+        #: no objective reads D_r_test, so its 9 000 forward passes per
+        #: candidate are pure cost. The baselines below and the
+        #: full-fidelity evaluator always measure it.
+        self.measure_retain_test = bool(eval_cfg.get("measure_retain_test", True))
 
         # --- baselines, measured once on the pristine model ---------------
-        self.original = self.measure_sets(self.model)
-        self.reference_metrics = self.measure_sets(reference)
+        # Baselines always include D_r_test: measured once, and every
+        # candidate's gap is reported against them.
+        self.original = self.measure_sets(self.model, include_retain_test=True)
+        self.reference_metrics = self.measure_sets(reference, include_retain_test=True)
 
     # -- internals --------------------------------------------------------
 
@@ -223,13 +230,27 @@ class ClassEvaluator:
         return self.model
 
     def measure_sets(
-        self, model: nn.Module, keep_per_sample: bool = False
+        self,
+        model: nn.Module,
+        keep_per_sample: bool = False,
+        include_retain_test: bool = True,
     ) -> dict[str, float]:
-        """Accuracy and loss on all four sets.
+        """Accuracy and loss on the four sets.
 
         ``keep_per_sample`` retains the per-sample arrays for the two
         forget-class sets, which the MIA needs. Off by default: ``D_r`` holds
         45 000 samples and the arrays are pure overhead when nothing reads them.
+
+        ``include_retain_test`` measures ``D_r_test``. Set it ``False`` during a
+        SEARCH. None of ``f1``, ``f2`` or ``f3`` reads ``D_r_test``, so its 9 000
+        forward passes are pure cost on every candidate -- about 4.6 million
+        across a 510-evaluation run, which otherwise dominates everything else
+        the search does. It is measured once for the baselines and again by the
+        full-fidelity evaluator, which is where it is actually reported.
+
+        ``D_f_test`` is always measured: 1 000 images, the MIA needs its
+        per-sample losses as non-members, and it is the headline quantity --
+        cheap enough to be worth having on every row.
         """
         forget_train: EvalOutput = evaluate_loader(
             model, self.loaders.forget_eval, self.device,
@@ -239,23 +260,32 @@ class ClassEvaluator:
         forget_test: EvalOutput = evaluate_loader(
             model, self.loaders.forget_test, self.device,
             collect_per_sample=keep_per_sample)
-        retain_test: EvalOutput = evaluate_loader(
-            model, self.loaders.retain_test, self.device, collect_per_sample=False)
 
         if keep_per_sample:
             self._last_forget_train = forget_train
             self._last_forget_test = forget_test
 
-        return {
+        measured = {
             "forget_train_acc": forget_train.accuracy,
             "forget_train_loss": forget_train.loss,
             "retain_train_acc": retain_train.accuracy,
             "retain_train_loss": retain_train.loss,
             "forget_test_acc": forget_test.accuracy,
             "forget_test_loss": forget_test.loss,
-            "retain_test_acc": retain_test.accuracy,
-            "retain_test_loss": retain_test.loss,
+            # nan rather than a stale or zero value: a row that did not measure
+            # D_r_test must be visibly unusable, not quietly wrong.
+            "retain_test_acc": float("nan"),
+            "retain_test_loss": float("nan"),
         }
+
+        if include_retain_test:
+            retain_test: EvalOutput = evaluate_loader(
+                model, self.loaders.retain_test, self.device,
+                collect_per_sample=False)
+            measured["retain_test_acc"] = retain_test.accuracy
+            measured["retain_test_loss"] = retain_test.loss
+
+        return measured
 
     def _execute(self, model: nn.Module, strategy: DecodedStrategy) -> list[Any]:
         """Apply the decoded actions in order, group-major, to ``model`` in place."""
@@ -329,7 +359,11 @@ class ClassEvaluator:
         started: float,
     ) -> ClassResult:
         """Forward-pass evaluation of the edited model, and the objectives."""
-        measured = self.measure_sets(model, keep_per_sample=self.compute_mia)
+        measured = self.measure_sets(
+            model,
+            keep_per_sample=self.compute_mia,
+            include_retain_test=self.measure_retain_test,
+        )
 
         obj1 = js_to_reference(
             model, self.loaders.forget_eval, self._reference_logits, self.device)

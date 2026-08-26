@@ -140,6 +140,7 @@ def main() -> int:
     cfg["evaluation"]["forget_subset_size"] = None
     cfg["evaluation"]["retain_subset_size"] = None
     cfg["evaluation"]["num_workers"] = 0
+    cfg["evaluation"]["measure_retain_test"] = True
 
     front_path = resolve_path(args.front)
     with front_path.open(encoding="utf-8-sig") as handle:

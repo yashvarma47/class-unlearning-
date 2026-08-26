@@ -533,5 +533,9 @@ class NSGA2:
 
 
 def objective_matrix(results: Iterable[Any]) -> list[Objectives]:
-    """Pull ``(obj1, obj2, obj3)`` out of a sequence of SEC results."""
-    return [(float(r.obj1), float(r.obj2), float(r.obj3)) for r in results]
+    """Pull ``(f1, f2, f3)`` out of a sequence of evaluation results.
+
+    Reads the ``objectives`` property rather than field names: that property is
+    the single definition of NSGA-II's objective ordering.
+    """
+    return [tuple(float(v) for v in r.objectives) for r in results]

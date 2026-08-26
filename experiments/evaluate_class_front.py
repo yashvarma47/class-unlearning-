@@ -71,6 +71,9 @@ def main() -> int:
     cfg["evaluation"]["forget_subset_size"] = None
     cfg["evaluation"]["retain_subset_size"] = None
     cfg["evaluation"]["num_workers"] = 0
+    # The search turns this off for speed; full fidelity is exactly where
+    # D_r_test must be measured, so it is forced back on regardless of config.
+    cfg["evaluation"]["measure_retain_test"] = True
 
     front_path = resolve_path(args.front)
     with front_path.open(encoding="utf-8-sig") as handle:

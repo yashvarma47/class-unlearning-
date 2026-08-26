@@ -85,8 +85,16 @@ def main() -> int:
 
     normalise = bool(search_cfg.get("normalise_objectives", True))
 
+    #: Raw objective values of the most recent generation, for logging. The
+    #: search itself sees normalised values when `normalise` is on, and under
+    #: min-max the best of each objective is 0.0 BY CONSTRUCTION -- logging
+    #: those would print three zeros every generation and say nothing.
+    latest_raw: list[tuple[float, float, float]] = []
+
     def evaluate_batch(chromosomes: list[Chromosome]) -> list[tuple[float, float, float]]:
-        values = population.evaluate(chromosomes)
+        values = population(chromosomes)
+        latest_raw.clear()
+        latest_raw.extend(values)
         return normalise_objectives(values) if normalise else values
 
     config = NSGA2Config(
@@ -109,7 +117,8 @@ def main() -> int:
     print("-" * 100)
 
     def on_generation(index: int, chromosomes, objectives) -> None:
-        columns = list(zip(*objectives)) if objectives else ((), (), ())
+        # Raw, not the normalised vector NSGA-II was handed.
+        columns = list(zip(*latest_raw)) if latest_raw else ((), (), ())
         best = [min(c) if c else float("nan") for c in columns]
         print(f"  {index:>4}{population.evaluated:>11}{population.cache_hits:>8}"
               f"{population.failures:>8}{best[0]:>10.5f}{best[1]:>10.5f}"
@@ -128,18 +137,33 @@ def main() -> int:
     print(f"  evaluated        {population.evaluated}")
     print(f"  cache hits       {population.cache_hits}")
     print(f"  failures         {population.failures}")
+    timing = population.runtime_summary()
+    print(f"  per individual   mean {timing['mean']:.2f}s  "
+          f"min {timing['min']:.2f}s  max {timing['max']:.2f}s")
     print(f"  Pareto front     {len(front)} members")
+
+    # NSGA-II holds whatever it was handed, which is normalised when
+    # `normalise` is on. The front must record RAW objectives -- a stored
+    # "obj1_js = 1.0" is meaningless when JS is bounded by ln 2 = 0.693.
+    # Every evaluation's raw values are on the population records, keyed by the
+    # same canonical strategy the cache uses.
+    raw_by_key = {r.canonical_key: (r.obj1, r.obj2, r.obj3)
+                  for r in population.records}
 
     rows: list[dict[str, Any]] = []
     for position, index in enumerate(front):
         chromosome = result.population[index]
         strategy = decode(chromosome, evaluator.registry.names)
-        f1, f2, f3 = result.objectives[index]
+        normalised = result.objectives[index]
+        f1, f2, f3 = raw_by_key.get(strategy.canonical_key(), normalised)
         rows.append({
             "front_position": position,
             "obj1_js": f1,
             "obj2_retain_loss": f2,
             "obj3_edit_cost": f3,
+            "obj1_normalised": normalised[0],
+            "obj2_normalised": normalised[1],
+            "obj3_normalised": normalised[2],
             "crowding_distance": result.distance[index],
             "n_actions": len(strategy.actions),
             "operators": "|".join(sorted({a.operator_name.split("@")[0]
@@ -156,13 +180,8 @@ def main() -> int:
         writer.writerows(rows)
 
     history_path = results_dir / "evaluation_history.csv"
-    records = [r.to_dict() if hasattr(r, "to_dict") else r
-               for r in population.records]
-    if records:
-        with history_path.open("w", newline="", encoding="utf-8-sig") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(records[0]))
-            writer.writeheader()
-            writer.writerows(records)
+    if population.records:
+        population.write_history(history_path)
 
     (results_dir / "summary.json").write_text(json.dumps({
         "name": search_cfg["name"],
@@ -173,6 +192,7 @@ def main() -> int:
         "cache_hits": population.cache_hits,
         "failures": population.failures,
         "elapsed_seconds": round(elapsed, 1),
+        "runtime_per_individual": population.runtime_summary(),
         "forget_class": evaluator.forget_class,
         "reference_checkpoint": evaluator.reference_path,
         "original": evaluator.original,

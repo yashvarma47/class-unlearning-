@@ -65,6 +65,16 @@ evaluation:
   # full 1 000 / 9 000.
   forget_subset_size: 64
   retain_subset_size: 256
+
+  # D_r_test is NOT measured per candidate during the search. No objective reads
+  # it -- f1 is on D_f, f2 is retain TRAIN loss, f3 is a weight norm -- so its
+  # 9 000 forward passes per candidate are pure cost, roughly 4.6 million across
+  # a 510-evaluation run. It is measured once for the baselines and again by
+  # evaluate_class_front.py, which is where it is reported.
+  #
+  # D_f_test is still measured on every candidate: 1 000 images, needed by the
+  # MIA as non-members, and it is the headline quantity.
+  measure_retain_test: false
   batch_size_key: train
   batch_cap: 3
   num_workers: 0

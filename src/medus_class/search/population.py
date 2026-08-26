@@ -55,9 +55,9 @@ class EvaluationRecord:
             "canonical_key": self.canonical_key,
             "cached": int(self.cached),
             "status": self.status,
-            "obj1_forget_acc": round(self.obj1, 6),
-            "obj2_utility_loss": round(self.obj2, 6),
-            "obj3_privacy_leakage": round(self.obj3, 6),
+            "obj1_js": round(self.obj1, 6),
+            "obj2_retain_loss": round(self.obj2, 6),
+            "obj3_edit_cost": round(self.obj3, 6),
             "runtime_seconds": round(self.runtime_seconds, 3),
             "n_actions": self.n_actions,
             "operators": self.operators,
@@ -133,7 +133,10 @@ class PopulationEvaluator:
             result: ClassResult = self.evaluator.evaluate(chromosome)
             elapsed = time.perf_counter() - started
 
-            values = (float(result.obj1), float(result.obj2), float(result.obj3))
+            # Read through the `objectives` property rather than by field
+            # name: it is the one place that defines NSGA-II's (f1, f2, f3)
+            # ordering, so a rename cannot silently desync the two again.
+            values = tuple(float(v) for v in result.objectives)
             self.evaluated += 1
             if result.status != "ok":
                 # A failed evaluation is scored at the penalty vector rather
