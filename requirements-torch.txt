@@ -1,6 +1,9 @@
-# Installed separately from the CUDA 12.1 wheel index:
+# LOCAL ONLY. Installed from the CUDA 12.1 wheel index:
 #   pip install -r requirements-torch.txt --index-url https://download.pytorch.org/whl/cu121
 #
 # torch 2.5.1 / cu121 supports compute capability 7.5 (GTX 1650, Turing).
+#
+# DO NOT run this on Kaggle: torch is preinstalled there with a build matched to
+# the assigned accelerator, and replacing it breaks GPU access.
 torch==2.5.1
 torchvision==0.20.1

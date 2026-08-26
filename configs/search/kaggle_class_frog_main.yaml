@@ -1,0 +1,43 @@
+# Plan A on Kaggle -- the main search.
+#
+# INHERITS search/plan_a_frog.yaml, so the objective set, the operator library,
+# the level cap and the selector are the SAME OBJECTS as the local run, not
+# copies of them. Anything that must match across the two environments is
+# therefore impossible to drift: editing it here would be visible as an override
+# in this file.
+#
+# What legitimately differs on Kaggle:
+#   * data root -- CIFAR-10 arrives as a read-only input dataset, or is
+#     downloaded; either way it is not the local path.
+#   * num_workers -- Kaggle is Linux, where DataLoader workers fork cheaply. The
+#     local runs use 0 because Windows re-spawns them per iteration and six
+#     loader pools cost ~50s/epoch in contention. That reason does not apply.
+#   * results_dir -- must be under /kaggle/working, the only writable location.
+#     PROJECT_ROOT resolves to the copied project directory, so the relative
+#     path below already lands there; it is restated for clarity.
+
+_base_:
+  - search/plan_a_frog.yaml
+
+data:
+  # Populated by the notebook: either copied from the input dataset or
+  # downloaded. Relative to PROJECT_ROOT (= /kaggle/working/MEDUS_Class_Unlearning).
+  root: data/cifar10
+  download: true
+
+  # Kaggle grants 4 vCPUs. Forking workers is cheap on Linux.
+  num_workers: 2
+  persistent_workers: true
+
+evaluation:
+  # Both checkpoints are staged here by the notebook from the input dataset.
+  # W_ref MUST be the _best_dr file -- selected on D_r_test, not full-test.
+  checkpoint: results/checkpoints/cifar10_resnet18_seed42_best.pt
+  reference_checkpoint: results/checkpoints/class6_frog_reference_best_dr.pt
+
+  # Overrides the local value of 0. See the header.
+  num_workers: 2
+
+search:
+  name: kaggle_class_frog_main
+  results_dir: results/search/kaggle_class_frog_main

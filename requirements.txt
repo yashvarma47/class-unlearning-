@@ -1,31 +1,29 @@
-# MED-US pinned dependencies
-# Target: Python 3.11 (Windows), NVIDIA GTX 1650 (Turing, sm_75), CUDA 12.1 wheels.
+# MEDUS Class Unlearning -- dependencies.
 #
-# PyTorch MUST be installed from the CUDA 12.1 wheel index, otherwise pip resolves
-# the CPU-only build and every SEC evaluation silently runs on CPU:
+# Torch is NOT pinned here. It is installed separately, because the correct
+# build differs by platform:
 #
-#   pip install -r requirements-torch.txt --index-url https://download.pytorch.org/whl/cu121
-#   pip install -r requirements.txt
+#   local (Windows, GTX 1650, CUDA 12.1):
+#       pip install -r requirements-torch.txt --index-url https://download.pytorch.org/whl/cu121
 #
-# See docs/environment.md for the full reproduction recipe.
+#   Kaggle:
+#       torch and torchvision are PREINSTALLED with a CUDA build matching the
+#       assigned accelerator. Do not reinstall them -- pip will resolve a build
+#       that does not match Kaggle's driver and every evaluation will silently
+#       fall back to CPU, or fail to see the GPU at all.
+#
+# See kaggle/README_KAGGLE.md.
 
 # --- scientific core -------------------------------------------------------
-numpy==2.1.3
-scipy==1.14.1
-pandas==2.2.3
-scikit-learn==1.5.2          # logistic-regression / SVC based MIA attack model (f3)
+numpy>=1.26,<3
+pandas>=2.0
+scikit-learn>=1.3          # MIA attack model (diagnostic only)
 
-# --- config, logging, IO ---------------------------------------------------
-PyYAML==6.0.2
-tqdm==4.67.1
+# --- config, IO ------------------------------------------------------------
+PyYAML>=6.0
 
 # --- plotting (Pareto fronts, dissertation figures) ------------------------
-matplotlib==3.9.2
+matplotlib>=3.7
 
 # --- testing ---------------------------------------------------------------
-pytest==8.3.4
-
-# --- evolutionary reference implementation ---------------------------------
-# Used in Phase 8 ONLY to validate our own NSGA-II against a trusted baseline.
-# The MED-US NSGA-II itself is implemented from scratch (dissertation contribution).
-pymoo==0.6.1.3
+pytest>=8.0

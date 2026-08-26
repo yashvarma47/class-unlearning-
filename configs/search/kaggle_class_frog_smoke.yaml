@@ -1,0 +1,19 @@
+# Smoke test of the Kaggle Plan A search: population 4, one generation.
+#
+# INHERITS kaggle_class_frog_main.yaml, so a pass here is evidence about the
+# config that will actually run -- same objectives, same operators, same
+# checkpoints, same paths. Only the budget differs.
+#
+# Mechanical, not scientific. Eight evaluations say nothing about selectivity.
+# They say: the project imported, CUDA is visible, both checkpoints loaded, the
+# class split is the right class, the class_contrast selector found connections,
+# no objective returned nan, and the output files were written.
+
+_base_:
+  - search/kaggle_class_frog_main.yaml
+
+search:
+  name: kaggle_class_frog_smoke
+  population_size: 4
+  generations: 1
+  results_dir: results/search/kaggle_class_frog_smoke

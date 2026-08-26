@@ -20,3 +20,4 @@ results/search/
 !results/analysis/**
 !results/splits/
 !results/splits/**
+dist/
