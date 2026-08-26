@@ -1,0 +1,349 @@
+{
+  "checkpoint": "results/checkpoints/cifar10_resnet18_seed42_best.pt",
+  "samples_per_set": 5000,
+  "seed": 42,
+  "min_channels_for_verdict": 32,
+  "elapsed_seconds": 90.3,
+  "ranked": [
+    {
+      "forget_class": 8,
+      "class_name": "ship",
+      "median_snr": 16.089647331366795,
+      "max_snr": 47.53970730678374,
+      "mean_snr": 21.115856527647136,
+      "channels": 4352,
+      "channels_beyond_noise": 3970,
+      "pct_beyond_noise": 91.22242647058823,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 47.54,
+          "pct_beyond_noise": 98.83
+        },
+        {
+          "group": "layer4",
+          "snr": 35.124,
+          "pct_beyond_noise": 95.26
+        },
+        {
+          "group": "layer1",
+          "snr": 16.09,
+          "pct_beyond_noise": 45.31
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 16.09,
+        "layer2": 1.77,
+        "layer3": 5.055,
+        "layer4": 35.124,
+        "fc": 47.54
+      }
+    },
+    {
+      "forget_class": 6,
+      "class_name": "frog",
+      "median_snr": 13.079793016662913,
+      "max_snr": 48.837140323544645,
+      "mean_snr": 22.692922856387877,
+      "channels": 4352,
+      "channels_beyond_noise": 3965,
+      "pct_beyond_noise": 91.10753676470588,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 48.837,
+          "pct_beyond_noise": 99.02
+        },
+        {
+          "group": "layer4",
+          "snr": 40.051,
+          "pct_beyond_noise": 95.95
+        },
+        {
+          "group": "layer3",
+          "snr": 13.08,
+          "pct_beyond_noise": 91.02
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 1.42,
+        "layer2": 10.076,
+        "layer3": 13.08,
+        "layer4": 40.051,
+        "fc": 48.837
+      }
+    },
+    {
+      "forget_class": 0,
+      "class_name": "airplane",
+      "median_snr": 10.287601304005083,
+      "max_snr": 56.066251543895824,
+      "mean_snr": 21.558277034782936,
+      "channels": 4352,
+      "channels_beyond_noise": 3920,
+      "pct_beyond_noise": 90.07352941176471,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 56.066,
+          "pct_beyond_noise": 98.83
+        },
+        {
+          "group": "layer4",
+          "snr": 35.935,
+          "pct_beyond_noise": 94.87
+        },
+        {
+          "group": "layer2",
+          "snr": 10.288,
+          "pct_beyond_noise": 86.52
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 1.589,
+        "layer2": 10.288,
+        "layer3": 3.913,
+        "layer4": 35.935,
+        "fc": 56.066
+      }
+    },
+    {
+      "forget_class": 3,
+      "class_name": "cat",
+      "median_snr": 10.112639926752037,
+      "max_snr": 74.23370255788649,
+      "mean_snr": 25.292212193213068,
+      "channels": 4352,
+      "channels_beyond_noise": 3715,
+      "pct_beyond_noise": 85.36305147058823,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 74.234,
+          "pct_beyond_noise": 99.61
+        },
+        {
+          "group": "layer4",
+          "snr": 39.48,
+          "pct_beyond_noise": 94.19
+        },
+        {
+          "group": "layer3",
+          "snr": 10.113,
+          "pct_beyond_noise": 83.59
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 1.275,
+        "layer2": 1.36,
+        "layer3": 10.113,
+        "layer4": 39.48,
+        "fc": 74.234
+      }
+    },
+    {
+      "forget_class": 7,
+      "class_name": "horse",
+      "median_snr": 8.24499015952679,
+      "max_snr": 83.7712844759452,
+      "mean_snr": 29.022744750928013,
+      "channels": 4352,
+      "channels_beyond_noise": 3662,
+      "pct_beyond_noise": 84.14522058823529,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 83.771,
+          "pct_beyond_noise": 99.02
+        },
+        {
+          "group": "layer4",
+          "snr": 50.568,
+          "pct_beyond_noise": 94.38
+        },
+        {
+          "group": "layer3",
+          "snr": 8.245,
+          "pct_beyond_noise": 82.71
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 1.299,
+        "layer2": 1.231,
+        "layer3": 8.245,
+        "layer4": 50.568,
+        "fc": 83.771
+      }
+    },
+    {
+      "forget_class": 9,
+      "class_name": "truck",
+      "median_snr": 7.824591956332675,
+      "max_snr": 68.25506908229875,
+      "mean_snr": 25.012273318843214,
+      "channels": 4352,
+      "channels_beyond_noise": 3861,
+      "pct_beyond_noise": 88.71783088235294,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 68.255,
+          "pct_beyond_noise": 99.02
+        },
+        {
+          "group": "layer4",
+          "snr": 43.791,
+          "pct_beyond_noise": 95.12
+        },
+        {
+          "group": "layer1",
+          "snr": 7.825,
+          "pct_beyond_noise": 41.02
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 7.825,
+        "layer2": 1.184,
+        "layer3": 4.007,
+        "layer4": 43.791,
+        "fc": 68.255
+      }
+    },
+    {
+      "forget_class": 2,
+      "class_name": "bird",
+      "median_snr": 6.9032866472124885,
+      "max_snr": 88.53392305637828,
+      "mean_snr": 28.544853034988073,
+      "channels": 4352,
+      "channels_beyond_noise": 3802,
+      "pct_beyond_noise": 87.36213235294117,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 88.534,
+          "pct_beyond_noise": 99.8
+        },
+        {
+          "group": "layer4",
+          "snr": 42.213,
+          "pct_beyond_noise": 93.95
+        },
+        {
+          "group": "layer3",
+          "snr": 6.903,
+          "pct_beyond_noise": 80.08
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 1.221,
+        "layer2": 3.853,
+        "layer3": 6.903,
+        "layer4": 42.213,
+        "fc": 88.534
+      }
+    },
+    {
+      "forget_class": 5,
+      "class_name": "dog",
+      "median_snr": 5.173209014099763,
+      "max_snr": 62.023913872996054,
+      "mean_snr": 21.48288711586706,
+      "channels": 4352,
+      "channels_beyond_noise": 3730,
+      "pct_beyond_noise": 85.70772058823529,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 62.024,
+          "pct_beyond_noise": 99.61
+        },
+        {
+          "group": "layer4",
+          "snr": 37.955,
+          "pct_beyond_noise": 92.87
+        },
+        {
+          "group": "layer3",
+          "snr": 5.173,
+          "pct_beyond_noise": 84.77
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 0.926,
+        "layer2": 1.336,
+        "layer3": 5.173,
+        "layer4": 37.955,
+        "fc": 62.024
+      }
+    },
+    {
+      "forget_class": 4,
+      "class_name": "deer",
+      "median_snr": 4.587747794705426,
+      "max_snr": 94.83543970014588,
+      "mean_snr": 29.08176765732498,
+      "channels": 4352,
+      "channels_beyond_noise": 3904,
+      "pct_beyond_noise": 89.70588235294117,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 94.835,
+          "pct_beyond_noise": 99.61
+        },
+        {
+          "group": "layer4",
+          "snr": 42.598,
+          "pct_beyond_noise": 94.14
+        },
+        {
+          "group": "layer3",
+          "snr": 4.588,
+          "pct_beyond_noise": 88.18
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 1.607,
+        "layer2": 1.78,
+        "layer3": 4.588,
+        "layer4": 42.598,
+        "fc": 94.835
+      }
+    },
+    {
+      "forget_class": 1,
+      "class_name": "automobile",
+      "median_snr": 3.8975118513352713,
+      "max_snr": 74.25280585729111,
+      "mean_snr": 25.606389396671528,
+      "channels": 4352,
+      "channels_beyond_noise": 3824,
+      "pct_beyond_noise": 87.86764705882354,
+      "strongest_groups": [
+        {
+          "group": "fc",
+          "snr": 74.253,
+          "pct_beyond_noise": 99.41
+        },
+        {
+          "group": "layer4",
+          "snr": 46.996,
+          "pct_beyond_noise": 94.92
+        },
+        {
+          "group": "layer3",
+          "snr": 3.898,
+          "pct_beyond_noise": 85.45
+        }
+      ],
+      "per_group_snr": {
+        "layer1": 1.492,
+        "layer2": 1.394,
+        "layer3": 3.898,
+        "layer4": 46.996,
+        "fc": 74.253
+      }
+    }
+  ]
+}

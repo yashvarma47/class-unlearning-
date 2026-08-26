@@ -1,0 +1,35 @@
+# MED-US Class Unlearning -- base configuration.
+# Experiment configs compose this with a data config and a model config via `_base_`.
+
+project: MEDUS-Class-Unlearning
+seed: 42
+
+# Deterministic algorithms are enforced inside the evaluator so that evaluating
+# the same chromosome twice yields identical objectives. Long training runs may set
+# this to false for throughput (the resulting checkpoint is then fixed on disk).
+deterministic: true
+
+device:
+  prefer: cuda          # falls back to CPU automatically when CUDA is absent
+  index: 0
+  # Automatic mixed precision is DISABLED on this hardware. Measured on the
+  # GTX 1650 (TU117) with ResNet-18 / CIFAR-10, batch 64:
+  #
+  #   fp32      440 samples/s, finite loss
+  #   fp16 AMP  165 samples/s, loss becomes NaN inside layer4
+  #
+  # The GTX 1650 is Turing but is the one Turing part *without* tensor cores, so
+  # fp16 has no fast path -- it is 2.7x slower and numerically unstable here.
+  # Re-enable only after re-measuring on hardware that has tensor cores.
+  amp: false
+
+paths:
+  data: data
+  results: results
+  splits: results/splits
+  checkpoints: results/checkpoints
+  search: results/search
+
+logging:
+  level: INFO
+  save_environment: true   # write the torch/CUDA/platform snapshot next to results

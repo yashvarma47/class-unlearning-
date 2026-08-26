@@ -1,0 +1,820 @@
+diff --git a/experiments/train_original.py b/experiments/train_original.py
+index cb1f303..605904b 100644
+--- a/experiments/train_original.py
++++ b/experiments/train_original.py
+@@ -81,6 +81,14 @@ CSV_COLUMNS = [
+     "lr",
+     "epoch_time",
+     "total_elapsed_time",
++    # --- class-reference mode only (--forget-class); blank otherwise --------
++    # D_r_test is the metric the class-unlearning reference is selected on, so
++    # it has to be recorded every epoch rather than reconstructed from whichever
++    # checkpoints happened to be saved.
++    "retain_test_loss",
++    "retain_test_acc",
++    "forget_test_loss",
++    "forget_test_acc",
+ ]
+ 
+ 
+@@ -105,6 +113,19 @@ def parse_args() -> argparse.Namespace:
+             "model. Omit for the original full-training-set model."
+         ),
+     )
++    parser.add_argument(
++        "--forget-class",
++        type=int,
++        default=None,
++        help=(
++            "CLASS-REFERENCE MODE. The CIFAR-10 label being forgotten (0-9). "
++            "When given, the test set is split into D_f_test (that class) and "
++            "D_r_test (the other nine), both are measured every epoch, and an "
++            "extra '_best_dr' checkpoint is kept, selected on D_r_test accuracy "
++            "with D_r_test loss as the tie-breaker. The usual '_best' "
++            "(full-test-accuracy) checkpoint is still written, unchanged."
++        ),
++    )
+     parser.add_argument(
+         "--tag",
+         default=None,
+@@ -315,6 +336,9 @@ def main() -> int:
+     checkpoint_dir.mkdir(parents=True, exist_ok=True)
+     latest_path = checkpoint_dir / f"{run_name}_latest.pt"
+     best_path = checkpoint_dir / f"{run_name}_best.pt"
++    #: Class-reference mode only. The checkpoint the class-unlearning search
++    #: should use -- selected on D_r_test, not on full-test accuracy.
++    best_dr_path = checkpoint_dir / f"{run_name}_best_dr.pt"
+     final_path = checkpoint_dir / f"{run_name}_final.pt"
+     csv_path = PROJECT_ROOT / "results" / f"{run_name}_log.csv"
+ 
+@@ -374,6 +398,33 @@ def main() -> int:
+     test_loader = make_loader(
+         bundle.test, data_cfg["batch_size"]["eval"], False, data_cfg, seed=cfg["seed"]
+     )
++
++    # --- class-reference mode ---------------------------------------------
++    # Selecting the reference on FULL test accuracy is wrong when a whole class
++    # was excluded from training: 1 000 of the 10 000 test images belong to that
++    # class, so the number is diluted, and worse, the forget-class logit is never
++    # positively trained but still fluctuates -- an epoch that happens to place a
++    # few more of them in the forgotten class scores HIGHER. That rewards the
++    # reference for recognising the thing it is meant never to have seen.
++    #
++    # D_r_test is the metric that actually describes a good reference, and the
++    # best epoch under it is almost never one of {best, latest, final}. So it is
++    # tracked here, during the run, rather than reconstructed afterwards.
++    retain_test_loader = None
++    forget_test_loader = None
++    if args.forget_class is not None:
++        from medus.data import CIFAR10_CLASS_NAMES, build_class_test_loaders
++
++        class_test = build_class_test_loaders(
++            bundle, args.forget_class, data_cfg, seed=cfg["seed"]
++        )
++        retain_test_loader = class_test.retain_test
++        forget_test_loader = class_test.forget_test
++        print(f"  class-reference mode   forget class {args.forget_class} "
++              f"({CIFAR10_CLASS_NAMES[args.forget_class]})")
++        print(f"  D_r_test / D_f_test    "
++              f"{len(retain_test_loader.dataset)} / {len(forget_test_loader.dataset)}")
++        print("  reference selected on  D_r_test accuracy, then D_r_test loss")
+     print(f"  train samples          {train_size} ({len(train_loader)} batches)")
+     print(f"  test samples           {bundle.test_size} ({len(test_loader)} batches)")
+ 
+@@ -395,6 +446,13 @@ def main() -> int:
+     # --- resume ------------------------------------------------------------
+     start_epoch = 1
+     best_acc = 0.0
++    #: Class-reference mode. Tracked as a pair so the tie-breaker is explicit:
++    #: highest D_r_test accuracy first, lowest D_r_test loss to settle ties.
++    #: Ties are common late in training once accuracy plateaus to three
++    #: decimal places, and picking the lower-loss model among them is a strictly
++    #: better-calibrated reference.
++    best_dr_acc = -1.0
++    best_dr_loss = float("inf")
+     history: list[dict] = []
+ 
+     if args.resume and latest_path.is_file():
+@@ -484,6 +542,20 @@ def main() -> int:
+                 model, train_loader, criterion, optimizer, device, epoch
+             )
+             test_loss, test_acc = evaluate(model, test_loader, criterion, device)
++
++            # Class-reference mode: measure the two halves of the test set
++            # separately. D_r_test drives checkpoint selection; D_f_test is a
++            # diagnostic and is deliberately NOT allowed to influence it.
++            retain_test_loss = retain_test_acc = None
++            forget_test_loss = forget_test_acc = None
++            if retain_test_loader is not None:
++                retain_test_loss, retain_test_acc = evaluate(
++                    model, retain_test_loader, criterion, device
++                )
++                forget_test_loss, forget_test_acc = evaluate(
++                    model, forget_test_loader, criterion, device
++                )
++
+             scheduler.step()
+ 
+             epoch_time = time.perf_counter() - epoch_start
+@@ -498,19 +570,47 @@ def main() -> int:
+                 "lr": round(current_lr, 8),
+                 "epoch_time": round(epoch_time, 2),
+                 "total_elapsed_time": round(total_elapsed, 2),
++                "retain_test_loss": (
++                    round(retain_test_loss, 6) if retain_test_loss is not None else ""
++                ),
++                "retain_test_acc": (
++                    round(retain_test_acc, 6) if retain_test_acc is not None else ""
++                ),
++                "forget_test_loss": (
++                    round(forget_test_loss, 6) if forget_test_loss is not None else ""
++                ),
++                "forget_test_acc": (
++                    round(forget_test_acc, 6) if forget_test_acc is not None else ""
++                ),
+             }
+             history.append(row)
+             append_csv_row(csv_path, row)
+ 
++            suffix = ""
++            if retain_test_acc is not None:
++                suffix = (f"  D_r_test {retain_test_acc:.4f}/{retain_test_loss:.4f}"
++                          f"  D_f_test {forget_test_acc:.4f}")
+             print(f"{epoch:>6} {train_loss:>9.4f} {train_acc:>8.4f} "
+                   f"{test_loss:>9.4f} {test_acc:>8.4f} {current_lr:>8.5f} "
+                   f"{format_duration(epoch_time):>9} "
+-                  f"{format_duration(total_elapsed):>10}", flush=True)
++                  f"{format_duration(total_elapsed):>10}{suffix}", flush=True)
+ 
+             is_best = test_acc > best_acc
+             if is_best:
+                 best_acc = test_acc
+ 
++            # Class-reference selection: D_r_test accuracy, ties broken by lower
++            # D_r_test loss. D_f_test plays no part -- a reference that scores
++            # well on the forgotten class is a worse reference, not a better one.
++            is_best_dr = False
++            if retain_test_acc is not None:
++                is_best_dr = retain_test_acc > best_dr_acc or (
++                    retain_test_acc == best_dr_acc and retain_test_loss < best_dr_loss
++                )
++                if is_best_dr:
++                    best_dr_acc = retain_test_acc
++                    best_dr_loss = retain_test_loss
++
+             metadata = CheckpointMetadata(
+                 model_name=model_cfg["name"],
+                 dataset=data_cfg["name"],
+@@ -522,6 +622,15 @@ def main() -> int:
+                     "test_loss": test_loss,
+                     "test_acc": test_acc,
+                     "best_test_acc": best_acc,
++                    **({
++                        "retain_test_loss": retain_test_loss,
++                        "retain_test_acc": retain_test_acc,
++                        "forget_test_loss": forget_test_loss,
++                        "forget_test_acc": forget_test_acc,
++                        "best_retain_test_acc": best_dr_acc,
++                        "best_retain_test_loss": best_dr_loss,
++                        "forget_class": args.forget_class,
++                    } if retain_test_acc is not None else {}),
+                 },
+                 split_file=split_canonical,
+                 training_config=training_config,
+@@ -538,6 +647,8 @@ def main() -> int:
+             save_checkpoint(latest_path, model, metadata, optimizer, scheduler)
+             if is_best:
+                 save_checkpoint(best_path, model, metadata, optimizer, scheduler)
++            if is_best_dr:
++                save_checkpoint(best_dr_path, model, metadata, optimizer, scheduler)
+ 
+             if epoch in SUMMARY_EPOCHS:
+                 print_summary(epoch, total_epochs, history, total_elapsed)
+@@ -605,6 +716,23 @@ def main() -> int:
+     print(f"  total time             {format_duration(total_time)}")
+     print(f"  latest / best / final  {latest_path.name} / {best_path.name} / "
+           f"{final_path.name}")
++
++    if args.forget_class is not None:
++        best_dr_row = max(
++            (r for r in history if r.get("retain_test_acc") not in (None, "")),
++            key=lambda r: (float(r["retain_test_acc"]), -float(r["retain_test_loss"])),
++        )
++        print("\n  --- class-reference selection (D_r_test) " + "-" * 26)
++        print(f"  best D_r_test acc      {float(best_dr_row['retain_test_acc']):.4f} "
++              f"(epoch {best_dr_row['epoch']}), "
++              f"loss {float(best_dr_row['retain_test_loss']):.4f}")
++        print(f"  its D_f_test acc       "
++              f"{float(best_dr_row['forget_test_acc']):.4f}   <- diagnostic only")
++        print(f"  full-test best epoch   {best['epoch']}   "
++              f"{'(same epoch)' if best['epoch'] == best_dr_row['epoch'] else '(DIFFERENT epoch -- this is why _best_dr exists)'}")
++        print(f"  reference checkpoint   {best_dr_path.name}")
++        print("  Point sec.reference_checkpoint at _best_dr, NOT _best.")
++
+     print(f"  log                    {csv_path.relative_to(PROJECT_ROOT)}")
+     return 0
+ 
+diff --git a/src/medus/data/__init__.py b/src/medus/data/__init__.py
+index cac1d28..bc35c62 100644
+--- a/src/medus/data/__init__.py
++++ b/src/medus/data/__init__.py
+@@ -1,23 +1,29 @@
+-"""Datasets and the instance-level unlearning splits.
++"""Datasets and the unlearning splits.
+ 
+-This is *instance* unlearning: ``D_f`` is a random subset of training indices,
+-never a whole class.
++The project's primary setting is *instance* unlearning: ``D_f`` is a random
++subset of training indices. A class-level split is also provided, used for the
++diagnostic contrast that tests why instance-level selectivity plateaued.
+ 
+ ``splits.py``
+-    Deterministic ``D_f`` / ``D_r`` partition, reproducing AMUN's seeded
+-    sampling and written to ``results/splits/*.csv`` in the single-column
+-    ``unlearn_idx`` format AMUN's ``--unlearn_indices`` expects.
++    Deterministic ``D_f`` / ``D_r`` partitions -- instance-level (reproducing
++    AMUN's seeded sampling) and class-level -- both written to
++    ``results/splits/*.csv`` in the single-column ``unlearn_idx`` format AMUN's
++    ``--unlearn_indices`` expects, plus the ``D_f_test`` / ``D_r_test``
++    partition class unlearning is judged on.
+ ``datasets.py``
+     CIFAR-10 loading with separate augmented (training) and clean (evaluation)
+-    transforms, and the ``D_f`` / ``D_r`` / ``D_T`` loader bundle.
++    transforms, the ``D_f`` / ``D_r`` / ``D_T`` loader bundle, and the
++    forget-class test loaders.
+ 
+ Tiny ImageNet is deferred to Phase 9; only its config placeholder exists.
+ """
+ 
+ from medus.data.datasets import (
+     CIFAR10Bundle,
++    ClassTestLoaders,
+     IndexedDataset,
+     UnlearningLoaders,
++    build_class_test_loaders,
+     build_transforms,
+     build_unlearning_loaders,
+     load_cifar10,
+@@ -25,23 +31,35 @@ from medus.data.datasets import (
+ )
+ from medus.data.splits import (
+     AMUN_INDEX_COLUMN,
++    CIFAR10_CLASS_NAMES,
+     UnlearningSplit,
++    class_test_partition,
++    create_class_split,
+     create_split,
++    get_or_create_class_split,
+     get_or_create_split,
+     load_split,
++    save_class_split,
+     save_split,
+ )
+ 
+ __all__ = [
+     "AMUN_INDEX_COLUMN",
++    "CIFAR10_CLASS_NAMES",
+     "UnlearningSplit",
++    "class_test_partition",
++    "create_class_split",
+     "create_split",
++    "get_or_create_class_split",
+     "get_or_create_split",
+     "load_split",
++    "save_class_split",
+     "save_split",
+     "CIFAR10Bundle",
++    "ClassTestLoaders",
+     "IndexedDataset",
+     "UnlearningLoaders",
++    "build_class_test_loaders",
+     "build_transforms",
+     "build_unlearning_loaders",
+     "load_cifar10",
+diff --git a/src/medus/data/datasets.py b/src/medus/data/datasets.py
+index a5c2e07..dfbe8d8 100644
+--- a/src/medus/data/datasets.py
++++ b/src/medus/data/datasets.py
+@@ -290,3 +290,70 @@ def _fixed_subset(
+     if size >= indices.size:
+         return indices
+     return np.sort(rng.choice(indices, size, replace=False))
++
++
++@dataclass
++class ClassTestLoaders:
++    """Held-out test data split by the forget class.
++
++    ``forget_test``   ``D_f_test`` -- test samples of the forgotten class
++    ``retain_test``   ``D_r_test`` -- test samples of the other nine classes
++
++    The instance-level pipeline has no equivalent: there, ``D_f`` and ``D_T``
++    are the same ten classes and one ``test_eval`` loader covers utility. Class
++    unlearning is judged on whether the model still recognises *unseen* members
++    of the forgotten class, which needs the two measured apart.
++    """
++
++    forget_test: DataLoader
++    retain_test: DataLoader
++    forget_class: int
++
++    def sizes(self) -> dict[str, int]:
++        return {
++            "forget_test": len(self.forget_test.dataset),
++            "retain_test": len(self.retain_test.dataset),
++        }
++
++
++def build_class_test_loaders(
++    bundle: CIFAR10Bundle,
++    forget_class: int,
++    data_cfg: dict[str, Any],
++    seed: int = 42,
++    subset_size: int | None = None,
++) -> ClassTestLoaders:
++    """Build the ``D_f_test`` / ``D_r_test`` loaders for a class-unlearning run.
++
++    Deliberately separate from :func:`build_unlearning_loaders` rather than
++    folded into it. That function is what every search so far was measured
++    through; widening its signature would put the whole instance-level record at
++    risk of a silent behaviour change for no benefit, since these two loaders
++    are only ever needed by the class-unlearning evaluation.
++
++    Parameters
++    ----------
++    subset_size:
++        If given, each loader is restricted to a fixed seeded subset of this
++        many samples. ``D_f_test`` holds only 1 000 CIFAR-10 images, so leave
++        this ``None`` for any reported number -- it exists for smoke tests.
++    """
++    from medus.data.splits import class_test_partition
++
++    eval_bs = int(data_cfg["batch_size"]["eval"])
++    forget_idx, retain_idx = class_test_partition(bundle.test.targets, forget_class)
++
++    if subset_size is not None:
++        rng = np.random.RandomState(seed)
++        forget_idx = _fixed_subset(forget_idx, subset_size, rng)
++        retain_idx = _fixed_subset(retain_idx, subset_size, rng)
++
++    return ClassTestLoaders(
++        forget_test=make_loader(
++            Subset(bundle.test, forget_idx.tolist()), eval_bs, False, data_cfg, seed
++        ),
++        retain_test=make_loader(
++            Subset(bundle.test, retain_idx.tolist()), eval_bs, False, data_cfg, seed
++        ),
++        forget_class=int(forget_class),
++    )
+diff --git a/src/medus/data/splits.py b/src/medus/data/splits.py
+index caa6d1c..fbae2a2 100644
+--- a/src/medus/data/splits.py
++++ b/src/medus/data/splits.py
+@@ -267,3 +267,190 @@ def get_or_create_split(
+     split = create_split(dataset_size, forget_fraction, seed)
+     save_split(split, csv_path)
+     return split, True
++
++
++# ---------------------------------------------------------------------------
++# Class-level splits
++# ---------------------------------------------------------------------------
++#
++# The instance-level split above is the project's primary setting. The
++# class-level split below exists for one purpose: the diagnostic contrast that
++# tests why instance-level selectivity hit a ceiling at S ~ 1.16.
++#
++# The explanation on record is that D_f and D_r are the same ten CIFAR-10
++# classes, so the network uses the same channels for both and no weight edit can
++# be selective. That predicts that making D_f a whole class -- genuinely
++# different data -- should produce forget-specific structure. These functions
++# build that split.
++#
++# The output format is deliberately identical to the instance-level one: a
++# single-column ``unlearn_idx`` CSV plus a JSON sidecar. Everything downstream
++# (``train_original.py --split``, ``build_unlearning_loaders``) consumes forget
++# indices without caring how they were chosen, so a class split needs no changes
++# there.
++
++#: CIFAR-10 label order, as shipped by torchvision. Index == integer label.
++CIFAR10_CLASS_NAMES: tuple[str, ...] = (
++    "airplane", "automobile", "bird", "cat", "deer",
++    "dog", "frog", "horse", "ship", "truck",
++)
++
++
++def create_class_split(
++    labels: np.ndarray | list[int],
++    forget_class: int,
++) -> UnlearningSplit:
++    """Build a forget/retain partition where ``D_f`` is one entire class.
++
++    Parameters
++    ----------
++    labels:
++        Integer label per training sample, in dataset index order. For CIFAR-10
++        this is ``bundle.train_clean.targets``.
++    forget_class:
++        The class to forget. Every training sample carrying this label goes to
++        ``D_f``; everything else goes to ``D_r``.
++
++    Notes
++    -----
++    Unlike the instance-level split there is no randomness and no seed: the
++    class label fully determines the partition. ``seed`` is recorded as ``-1``
++    and ``forget_fraction`` as the fraction the class happens to occupy (0.1 for
++    a balanced CIFAR-10 class), purely so the resulting ``UnlearningSplit``
++    carries the same metadata as every other split in the project.
++    """
++    label_array = np.asarray(labels, dtype=np.int64)
++    dataset_size = int(label_array.size)
++
++    if not 0 <= forget_class < 10:
++        raise ValueError(f"forget_class must be a CIFAR-10 label 0-9, got {forget_class}")
++
++    forget_indices = np.sort(np.flatnonzero(label_array == forget_class))
++    if forget_indices.size == 0:
++        raise ValueError(
++            f"class {forget_class} has no training samples; "
++            f"labels present: {sorted(set(label_array.tolist()))}"
++        )
++    if forget_indices.size == dataset_size:
++        raise ValueError(
++            f"class {forget_class} covers the whole training set, leaving D_r empty"
++        )
++
++    retain_indices = np.setdiff1d(np.arange(dataset_size), forget_indices)
++
++    return UnlearningSplit(
++        forget_indices=forget_indices,
++        retain_indices=retain_indices,
++        dataset_size=dataset_size,
++        forget_fraction=forget_indices.size / dataset_size,
++        seed=-1,
++    )
++
++
++def save_class_split(
++    split: UnlearningSplit,
++    forget_class: int,
++    path: str | Path,
++) -> Path:
++    """Write a class split in the same format as an instance split.
++
++    The sidecar gains ``strategy``, ``forget_class`` and ``forget_class_name``
++    so a split file on disk can never be mistaken for an instance-level one --
++    the two are the same size for CIFAR-10 (5 000 indices) and would otherwise
++    be indistinguishable.
++    """
++    csv_path = resolve_path(path)
++    csv_path.parent.mkdir(parents=True, exist_ok=True)
++
++    pd.DataFrame({AMUN_INDEX_COLUMN: split.forget_indices}).to_csv(csv_path, index=False)
++
++    summary = split.summary()
++    summary["strategy"] = "forget_class"
++    summary["forget_class"] = int(forget_class)
++    summary["forget_class_name"] = CIFAR10_CLASS_NAMES[forget_class]
++
++    meta_path = csv_path.with_suffix(".json")
++    meta_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
++    return csv_path
++
++
++def get_or_create_class_split(
++    labels: np.ndarray | list[int],
++    forget_class: int,
++    path: str | Path,
++    overwrite: bool = False,
++) -> tuple[UnlearningSplit, bool]:
++    """Load the class split at ``path``, creating and saving it if absent.
++
++    A pre-existing file recorded against a *different* forget class is a silent
++    experiment-configuration error -- the run would unlearn one class while
++    reporting another -- so it raises rather than proceeding.
++
++    Returns
++    -------
++    tuple
++        ``(split, created)``.
++    """
++    csv_path = resolve_path(path)
++    label_array = np.asarray(labels, dtype=np.int64)
++
++    if csv_path.is_file() and not overwrite:
++        split = load_split(csv_path, int(label_array.size))
++
++        meta_path = csv_path.with_suffix(".json")
++        if meta_path.is_file():
++            meta = json.loads(meta_path.read_text(encoding="utf-8"))
++            recorded = meta.get("forget_class")
++            if recorded is not None and int(recorded) != int(forget_class):
++                raise ValueError(
++                    f"existing split {csv_path} was built for class {recorded} "
++                    f"({meta.get('forget_class_name')}) but the config requests "
++                    f"class {forget_class} ({CIFAR10_CLASS_NAMES[forget_class]}). "
++                    f"Refusing to continue; delete the file or fix the config."
++                )
++
++        # Independent of the sidecar: verify the indices really are that class.
++        actual = np.unique(label_array[split.forget_indices])
++        if actual.size != 1 or int(actual[0]) != int(forget_class):
++            raise ValueError(
++                f"existing split {csv_path} does not hold exactly class "
++                f"{forget_class}: its forget indices cover labels "
++                f"{actual.tolist()}"
++            )
++        return split, False
++
++    split = create_class_split(label_array, forget_class)
++    save_class_split(split, forget_class, csv_path)
++    return split, True
++
++
++def class_test_partition(
++    test_labels: np.ndarray | list[int],
++    forget_class: int,
++) -> tuple[np.ndarray, np.ndarray]:
++    """Partition the test set into ``D_f_test`` and ``D_r_test``.
++
++    Class unlearning is judged on held-out data of the forgotten class, which
++    the instance-level pipeline never needed: there, ``D_f`` and the test set
++    are the same ten classes, so a single ``test_eval`` loader covered utility.
++    Here the forget class must be measured separately or the headline number
++    (does the model still recognise airplanes it has never seen?) cannot be
++    computed at all.
++
++    Returns
++    -------
++    tuple
++        ``(forget_test_indices, retain_test_indices)``, both sorted.
++    """
++    label_array = np.asarray(test_labels, dtype=np.int64)
++
++    if not 0 <= forget_class < 10:
++        raise ValueError(f"forget_class must be a CIFAR-10 label 0-9, got {forget_class}")
++
++    forget_test = np.sort(np.flatnonzero(label_array == forget_class))
++    retain_test = np.setdiff1d(np.arange(label_array.size), forget_test)
++
++    if forget_test.size == 0:
++        raise ValueError(f"class {forget_class} has no test samples")
++
++    return forget_test, retain_test
+diff --git a/src/medus/evaluation/sec.py b/src/medus/evaluation/sec.py
+index 6722c85..191e7a4 100644
+--- a/src/medus/evaluation/sec.py
++++ b/src/medus/evaluation/sec.py
+@@ -109,10 +109,36 @@ PENALTY_OBJECTIVES_UNBOUNDED = (
+ #:                       f1 = -L_f, f2 = L_r, f3 = KL(P_r(D_f) || P(D_f)).
+ #:                       All three are UNBOUNDED, which is why failed
+ #:                       evaluations use PENALTY_OBJECTIVES_UNBOUNDED.
+-OBJECTIVE_MODES = ("forget_acc", "gap_to_reference", "loss_kl")
++#: ``js_editcost``       the CLASS-UNLEARNING formulation:
++#:                       f1 = JS(P_r(D_f) || P(D_f)), f2 = L_r,
++#:                       f3 = an edit cost (see ``sec.f3_metric``).
++#:                       Two deliberate departures from ``loss_kl``:
++#:                       f1 matches the reference's predictive DISTRIBUTION
++#:                       rather than its scalar loss, and f3 no longer reads the
++#:                       data at all -- under ``loss_kl`` both f2 and f3 punished
++#:                       a damaged model, so the two behaved as near-duplicates
++#:                       and the front collapsed to a two-objective trade-off.
++OBJECTIVE_MODES = ("forget_acc", "gap_to_reference", "loss_kl", "js_editcost")
+ 
+ #: Modes whose objectives are not confined to [0, 1].
+-UNBOUNDED_MODES = frozenset({"loss_kl"})
++#:
++#: ``js_editcost`` is listed even though f1 is bounded by ln 2 and f3 is a
++#: relative norm: f2 is the raw retain loss, which a destroyed candidate drives
++#: arbitrarily high, so a failure scored at 1.0 would still outrank a genuine
++#: bad candidate.
++UNBOUNDED_MODES = frozenset({"loss_kl", "js_editcost"})
++
++#: Valid values for ``sec.f3_metric`` under ``js_editcost``.
++#:
++#: ``param_delta``   ||theta - theta_0|| / ||theta_0||, the DEFAULT. The only
++#:                   objective of the three that never touches the data, so it
++#:                   is orthogonal to f1 and f2 by construction.
++#: ``anchor_drift``  mean cosine distance of penultimate features on D_r. Also
++#:                   an edit cost, but measured in representation space.
++#: ``kl_reference``  the old KL(P_r(D_f) || P(D_f)). Kept ONLY so the
++#:                   near-duplication of f2 and f3 can be re-measured rather
++#:                   than asserted; not a recommended setting.
++F3_METRICS = ("param_delta", "anchor_drift", "kl_reference")
+ 
+ 
+ @dataclass
+@@ -156,6 +182,20 @@ class SECResult:
+     #: KL(P_r(D_f) || P(D_f)) in loss_kl mode; nan otherwise. Recorded even
+     #: though it is obj3 there, so the raw value survives normalisation.
+     kl_to_reference: float = float("nan")
++    #: JS(P_r(D_f) || P(D_f)) -- obj1 under js_editcost. Recorded raw, for the
++    #: same reason as kl_to_reference.
++    js_to_reference: float = float("nan")
++    #: ||theta - theta_0|| / ||theta_0|| over weight tensors.
++    #:
++    #: Recorded under js_editcost whether or not it is obj3, together with
++    #: kl_to_reference and anchor_drift. All three candidate f3 metrics on every
++    #: result is what lets the f2/f3 independence question be settled from the
++    #: run's own output instead of by assumption.
++    param_delta_relative: float = float("nan")
++    #: Mean cosine distance of penultimate features on D_r, against the pristine
++    #: model. Only computed when f3_metric is 'anchor_drift' -- it needs a cached
++    #: feature matrix over D_r, which is not free.
++    anchor_drift: float = float("nan")
+ 
+     # --- diagnostics only -----------------------------------------------
+     retain_acc: float = float("nan")
+@@ -202,6 +242,9 @@ class SECResult:
+             "objective_mode": self.objective_mode,
+             "reference_forget_acc": self.reference_forget_acc,
+             "kl_to_reference": self.kl_to_reference,
++            "js_to_reference": self.js_to_reference,
++            "param_delta_relative": self.param_delta_relative,
++            "anchor_drift": self.anchor_drift,
+             "obj1_forget_acc": self.obj1,
+             "obj2_utility_loss": self.obj2,
+             "obj3_privacy_leakage": self.obj3,
+@@ -251,12 +294,37 @@ class SEC:
+             data_cfg = {**data_cfg, "num_workers": int(sec_cfg["num_workers"])}
+ 
+         bundle = load_cifar10({**data_cfg, "download": False})
+-        self.split, _ = get_or_create_split(
+-            dataset_size=bundle.train_size,
+-            forget_fraction=split_cfg["forget_fraction"],
+-            seed=split_cfg["split_seed"],
+-            path=split_cfg["index_file"],
+-        )
++
++        # A class split and an instance split are both 5 000 CIFAR-10 indices,
++        # so they are indistinguishable from the file alone. Dispatching on the
++        # declared strategy matters for one specific failure: if the class split
++        # file were missing, get_or_create_split would cheerfully SAMPLE a random
++        # instance split into its path, and the run would report class
++        # unlearning while performing instance unlearning. Routing by strategy
++        # means the class path can only ever build a class split.
++        self.split_strategy = split_cfg.get("strategy", "random_instances")
++        self.forget_class: int | None = None
++
++        if self.split_strategy == "forget_class":
++            from medus.data import get_or_create_class_split
++
++            if "forget_class" not in split_cfg:
++                raise ValueError(
++                    "split.strategy 'forget_class' requires split.forget_class"
++                )
++            self.forget_class = int(split_cfg["forget_class"])
++            self.split, _ = get_or_create_class_split(
++                labels=bundle.train_clean.targets,
++                forget_class=self.forget_class,
++                path=split_cfg["index_file"],
++            )
++        else:
++            self.split, _ = get_or_create_split(
++                dataset_size=bundle.train_size,
++                forget_fraction=split_cfg["forget_fraction"],
++                seed=split_cfg["split_seed"],
++                path=split_cfg["index_file"],
++            )
+         self.split_path = str(split_cfg["index_file"])
+ 
+         self.loaders = build_unlearning_loaders(
+@@ -345,6 +413,10 @@ class SEC:
+         self.reference_forget_acc: float | None = None
+         self._reference_logits: torch.Tensor | None = None
+         self.forget_loss_cap: float | None = None
++        #: Only meaningful under js_editcost; defined for every mode so nothing
++        #: has to guard on the mode before reading them.
++        self.f3_metric: str = "param_delta"
++        self._anchor_features: torch.Tensor | None = None
+ 
+         if self.objective_mode == "gap_to_reference":
+             self.reference_forget_acc = self._resolve_reference_forget_acc(sec_cfg)
+@@ -379,6 +451,43 @@ class SEC:
+             else:
+                 self.forget_loss_cap = uniform_predictor_loss(self.num_classes)
+ 
++        elif self.objective_mode == "js_editcost":
++            # f1 = JS(P_r(D_f) || P(D_f)) needs the same cached reference logits
++            # loss_kl uses, and for the same reason: the reference never changes,
++            # so computing its outputs once here rather than per chromosome
++            # halves the cost of the objective.
++            if not self.reference_checkpoint:
++                raise ValueError(
++                    "objective_mode 'js_editcost' requires sec.reference_checkpoint: "
++                    "f1 is a Jensen-Shannon divergence against the retrained "
++                    "reference model, which must be loaded to produce its outputs."
++                )
++            path = resolve_path(self.reference_checkpoint)
++            if not path.is_file():
++                raise ValueError(f"sec.reference_checkpoint does not exist: {path}")
++
++            self.reference_forget_acc = self._measure_reference(path)
++            self._reference_logits = self._cache_reference_logits(path)
++
++            self.f3_metric = sec_cfg.get("f3_metric", "param_delta")
++            if self.f3_metric not in F3_METRICS:
++                raise ValueError(
++                    f"unknown sec.f3_metric {self.f3_metric!r}; "
++                    f"expected one of {sorted(F3_METRICS)}"
++                )
++
++            # Anchor drift compares penultimate features on D_r against the
++            # PRISTINE model, so the baseline must be cached before any
++            # chromosome touches the weights. Only built when asked for: it is a
++            # full forward pass over D_r plus a feature matrix held in memory.
++            self._anchor_features: torch.Tensor | None = None
++            if self.f3_metric == "anchor_drift":
++                from medus.evaluation.class_objectives import penultimate_features
++
++                self._anchor_features = penultimate_features(
++                    self.model, self.loaders.retain_eval, self.device
++                )
++
+         #: Instance-DAMP channel scores, computed once and reused. They describe
+         #: the ORIGINAL model, which is the network being unlearned FROM, so
+         #: recomputing them mid-strategy would score a model that no longer
+@@ -777,6 +886,14 @@ class SEC:
+             model, self.loaders.retain_eval, self.device, collect_per_sample=False
+         )
+ 
++        # Diagnostics recorded alongside the objectives. Set by the js_editcost
++        # branch; nan everywhere else, so a stored value can never be read as
++        # having been measured when it was not.
++        js_value = float("nan")
++        param_delta_value = float("nan")
++        drift_value = float("nan")
++        kl_value = float("nan")
++
+         if self.objective_mode == "loss_kl":
+             # f1 = -min(L_f, cap); see forget_loss_objective for why the cap.
+             # Supervisor's final formulation. All three are UNBOUNDED.
+@@ -796,6 +913,45 @@ class SEC:
+             obj3_value = kl_to_reference(
+                 model, self.loaders.forget_eval, self._reference_logits, self.device
+             )
++        elif self.objective_mode == "js_editcost":
++            # Class unlearning.
++            #   f1 = JS(P_r(D_f) || P(D_f))   match the reference's DISTRIBUTION
++            #   f2 = L_r                      retain loss
++            #   f3 = edit cost                how much the network was moved
++            #
++            # Every candidate f3 metric is computed and recorded, not only the
++            # one in use. The extra cost is a weight-space norm (no forward pass)
++            # and one KL over D_f, which the forward pass for f1 has already
++            # loaded; in exchange the f2/f3 independence question is answerable
++            # from the run's own CSV rather than by re-running the search.
++            from medus.evaluation.class_objectives import (
++                js_to_reference,
++                relative_parameter_delta,
++                retain_anchor_drift,
++            )
++
++            js_value = js_to_reference(
++                model, self.loaders.forget_eval, self._reference_logits, self.device
++            )
++            param_delta_value = relative_parameter_delta(model, self._original_state)
++            kl_value = kl_to_reference(
++                model, self.loaders.forget_eval, self._reference_logits, self.device
++            )
++            drift_value = (
++                retain_anchor_drift(
++                    model, self.loaders.retain_eval, self._anchor_features, self.device
++                )
++                if self._anchor_features is not None
++                else float("nan")
++            )
++
++            obj1 = js_value
++            obj2 = float(retain.loss)
++            obj3_value = {
++                "param_delta": param_delta_value,
++                "anchor_drift": drift_value,
++                "kl_reference": kl_value,
++            }[self.f3_metric]
+         elif self.objective_mode == "gap_to_reference":
+             obj1 = memorisation_gap_objective(
+                 forget.accuracy, self.reference_forget_acc
+@@ -861,11 +1017,20 @@ class SEC:
+             test_loss=test.loss,
+             utility_loss_norm=(
+                 utility_objective(test.accuracy, self.original_test_acc)
+-                if self.objective_mode == "loss_kl" else obj2
++                if self.objective_mode in ("loss_kl", "js_editcost") else obj2
+             ),
++            # Under loss_kl obj3 IS the KL, so it is stored from there. Under
++            # js_editcost obj3 is whichever f3_metric is in use -- often the edit
++            # cost -- so the KL must come from its own variable or a parameter
++            # norm would be filed as a divergence.
+             kl_to_reference=(
+-                float(obj3_value) if obj3_value is not None else float("nan")
++                float(obj3_value)
++                if self.objective_mode == "loss_kl" and obj3_value is not None
++                else kl_value
+             ),
++            js_to_reference=js_value,
++            param_delta_relative=param_delta_value,
++            anchor_drift=drift_value,
+             objective_mode=self.objective_mode,
+             reference_forget_acc=(
+                 float(self.reference_forget_acc)

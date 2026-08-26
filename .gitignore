@@ -1,0 +1,22 @@
+# Datasets and large binaries are not source.
+data/
+*.pt
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Run outputs. The configs and code that produce them are tracked; the
+# artefacts are not, with the exception of the small analysis summaries below.
+results/*.out
+results/*.err
+results/*_log.csv
+results/*_environment.json
+results/checkpoints/
+results/search/
+
+# Kept: the class-structure measurement that motivates the whole project.
+!results/analysis/
+!results/analysis/**
+!results/splits/
+!results/splits/**

@@ -1,0 +1,190 @@
+# Operator lookup: gene value + intensity level -> concrete hyperparameters.
+#
+# This is the ONLY place a ratio, sigma, limit or bit-count may be written down.
+# Nothing else in the codebase hard-codes an operator hyperparameter.
+#
+# Scope: the eight SAFE gradient-free operators, and nothing else.
+# ---------------------------------------------------------------------------
+# The predecessor project's table carried twenty-two operators across two
+# families, most of them gradient-based and most of them demoted
+# (`selectable: false`) by the end. Carrying that forward would mean shipping a
+# table where two thirds of the entries are disabled and the reader has to work
+# out which ones are live.
+#
+# Two operators are deliberately absent rather than disabled:
+#
+#   REINIT     re-draws selected weights from the initialisation distribution
+#   SIGN_FLIP  negates selected weights
+#
+# Both were the most destructive operators in the predecessor's calibration --
+# SIGN_FLIP took layer4 from 0.988 to 0.211 forget accuracy across its ladder --
+# and both dominated the fronts that turned out to be full of wrecked models.
+# They are excluded from the library, not merely from a config allowlist, so a
+# future run cannot re-enable them by editing one line.
+#
+# The ladders below are copied UNCHANGED from the predecessor's calibrated
+# table. They were measured on the same architecture and the same dataset, so
+# re-deriving them would discard verified work; the ids are renumbered
+# contiguously from 0 because the intervening operators no longer exist.
+
+# Ordinal intensity. 0 means "skip this operator" and never indexes a ladder;
+# levels 1..5 map onto levels[0..4].
+intensity_levels:
+  0: OFF
+  1: VERY_LOW
+  2: LOW
+  3: MEDIUM
+  4: HIGH
+  5: VERY_HIGH
+
+# ---------------------------------------------------------------------------
+# Channel A -- connection-selection edits.
+# These choose WHICH connections to touch and switch them off or overwrite them.
+# ---------------------------------------------------------------------------
+editor_operators:
+  0:
+    name: MASK
+    full_name: Forget-informed mask -- zero the connections that respond most to
+               the forget class relative to the retained classes
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: zero the top-ratio connections by |W| * (rms_f - rms_r)
+    provenance: reimplemented-verified
+    # The operator this whole project is really testing. Its selector is the
+    # class-activation contrast, so it is the one that can exploit the
+    # class-specific channels the structure analysis found.
+    requires: [forget, retain]
+    levels:
+      - {ratio: 0.01}
+      - {ratio: 0.05}
+      - {ratio: 0.10}
+      - {ratio: 0.20}
+      - {ratio: 0.40}
+
+  1:
+    name: PRUNE
+    full_name: Magnitude pruning -- zero the smallest-magnitude connections
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: zero the bottom-ratio connections by |W|
+    provenance: reimplemented-verified
+    # DATA-FREE CONTROL. Never looks at D_f. If a forget-informed operator
+    # cannot beat this, the "forget-informed" part is doing nothing -- which is
+    # exactly what the instance-level project found and why this stays in the
+    # library rather than being dropped as a weak method.
+    requires: []
+    levels:
+      - {ratio: 0.50}
+      - {ratio: 0.70}
+      - {ratio: 0.85}
+      - {ratio: 0.95}
+      - {ratio: 0.99}
+
+  2:
+    name: RANDOM_PRUNE
+    full_name: Random pruning -- zero a uniformly random subset of connections
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: zero a uniformly random ratio of connections
+    provenance: reimplemented-verified
+    # The second data-free control, and the null model for selection: it damages
+    # the same NUMBER of connections as MASK without choosing them. Restricted
+    # to its two gentlest rungs in the Plan A config via max_level.
+    requires: []
+    levels:
+      - {ratio: 0.05}
+      - {ratio: 0.15}
+      - {ratio: 0.30}
+      - {ratio: 0.50}
+      - {ratio: 0.70}
+
+# ---------------------------------------------------------------------------
+# Channel B -- value-perturbation edits.
+# These keep the connections and change what they hold.
+# ---------------------------------------------------------------------------
+smoother_operators:
+  0:
+    name: DAMP
+    full_name: Damping -- scale selected connections toward zero
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: multiply selected connections by (1 - strength)
+    provenance: reimplemented-verified
+    requires: [forget, retain]
+    levels:
+      - {ratio: 0.05, strength: 0.10}
+      - {ratio: 0.10, strength: 0.25}
+      - {ratio: 0.20, strength: 0.50}
+      - {ratio: 0.30, strength: 0.75}
+      - {ratio: 0.40, strength: 0.90}
+
+  1:
+    name: NOISE
+    full_name: Gaussian noise -- perturb selected connections
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: add N(0, sigma * std(W)) to selected connections
+    provenance: reimplemented-verified
+    requires: [forget, retain]
+    levels:
+      - {ratio: 0.10, sigma: 0.5}
+      - {ratio: 0.20, sigma: 1.0}
+      - {ratio: 0.30, sigma: 1.5}
+      - {ratio: 0.40, sigma: 2.0}
+      - {ratio: 0.50, sigma: 3.0}
+
+  2:
+    name: CLIP
+    full_name: Magnitude clipping -- bound selected connections
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: clamp selected connections to +/- limit * std(W)
+    provenance: reimplemented-verified
+    requires: [forget, retain]
+    levels:
+      - {ratio: 0.10, limit: 3.0}
+      - {ratio: 0.20, limit: 2.0}
+      - {ratio: 0.30, limit: 1.0}
+      - {ratio: 0.40, limit: 0.5}
+      - {ratio: 0.50, limit: 0.2}
+
+  3:
+    name: QUANTIZE
+    full_name: Uniform quantisation -- reduce the precision of selected connections
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: round selected connections onto a 2^bits uniform grid
+    provenance: reimplemented-verified
+    requires: [forget, retain]
+    levels:
+      - {ratio: 0.30, bits: 5}
+      - {ratio: 0.40, bits: 4}
+      - {ratio: 0.50, bits: 4}
+      - {ratio: 0.60, bits: 3}
+      - {ratio: 0.70, bits: 3}
+
+  4:
+    name: RESET
+    full_name: Reset -- restore selected connections to their pre-edit values
+    selectable: true
+    atomic: true
+    role: operator
+    atomic_action: copy selected connections back from the group snapshot
+    provenance: reimplemented-verified
+    # Depends on the snapshot the operator context takes before a group is
+    # modified, so it is only meaningful after another operator has run on the
+    # same group. A no-op otherwise, by design.
+    requires: [forget, retain]
+    levels:
+      - {ratio: 0.05}
+      - {ratio: 0.10}
+      - {ratio: 0.20}
+      - {ratio: 0.35}
+      - {ratio: 0.50}

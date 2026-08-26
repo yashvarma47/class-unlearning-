@@ -1,0 +1,35 @@
+# ResNet-18, CIFAR variant (3x3 stem, no initial max-pool) -- the AMUN setup.
+
+model:
+  name: resnet18
+  variant: cifar          # 3x3 conv1, stride 1, max-pool removed
+  pretrained: false
+
+  # Layer groups define L, the chromosome length. Order is the forward order and
+  # is also the execution order of decoded unlearning actions.
+  # L = 6 for the first implementation.
+  layer_groups:
+    - name: stem
+      modules: [conv1, bn1]
+    - name: layer1
+      modules: [layer1]
+    - name: layer2
+      modules: [layer2]
+    - name: layer3
+      modules: [layer3]
+    - name: layer4
+      modules: [layer4]
+    - name: fc
+      modules: [fc]
+
+# Original-model training (Phase 3). Follows the AMUN protocol.
+training:
+  epochs: 200
+  optimizer: sgd
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 5.0e-4
+  scheduler: step
+  lr_step_size: 40        # x0.1 every 40 epochs
+  lr_gamma: 0.1
+  checkpoint: results/checkpoints/cifar10_resnet18_seed42.pt

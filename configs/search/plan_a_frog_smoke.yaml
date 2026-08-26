@@ -1,0 +1,18 @@
+# Smoke test of the Plan A search: population 4, one generation.
+#
+# Mechanical, not scientific. Eight evaluations say nothing about selectivity;
+# they say the loop runs end to end, no objective returns nan, the
+# class_contrast selector finds connections on a class split, and the output
+# files are written in the expected shape.
+#
+# Everything except population, generations and results_dir is inherited from
+# the real run, so a pass here is evidence about THAT config.
+
+_base_:
+  - search/plan_a_frog.yaml
+
+search:
+  name: plan_a_frog_smoke
+  population_size: 4
+  generations: 1
+  results_dir: results/search/plan_a_frog_smoke

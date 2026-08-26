@@ -1,0 +1,96 @@
+# Plan A -- class unlearning of CIFAR-10 "frog" (label 6).
+#
+# The question
+# ------------
+# The predecessor project searched INSTANCE-level unlearning exhaustively and hit
+# a ceiling: best selectivity S = 1.158 across 10 534 evaluated strategies, three
+# operator families, five selectors and four objective formulations, against
+# ~932 for retraining from scratch. A channel measurement explained it: only
+# 0.55% of channels responded differently to D_f than to D_r, where pure noise
+# gives 1.00%. D_f and D_r were the same ten classes, so there was no
+# forget-specific structure for any weight edit to remove.
+#
+# That explanation predicts its own falsification: make D_f genuinely different
+# and the structure should appear. It does. Measured on the original model
+# across all ten classes, 84-91% of channels exceed the noise floor, and for
+# frog it is 91.11%. This run tests whether the operators can exploit it.
+
+_base_:
+  - base.yaml
+  - data/cifar10_class.yaml
+  - model/resnet18.yaml
+
+evaluation:
+  # The model being unlearned FROM: trained on all 50 000 images.
+  checkpoint: results/checkpoints/cifar10_resnet18_seed42_best.pt
+
+  # The target: trained on D_r only, never saw a frog.
+  #
+  # MUST be the _best_dr file. The full-test-accuracy '_best' checkpoint is the
+  # wrong criterion here -- 1 000 of its 10 000 test images are frogs the
+  # reference never trained on, so that number is both diluted and, worse,
+  # rewards an epoch for classifying more frogs correctly. _best_dr is selected
+  # on D_r_test accuracy with D_r_test loss as the tie-breaker.
+  reference_checkpoint: results/checkpoints/class6_frog_reference_best_dr.pt
+
+  # --- objectives (fixed; there is no mode flag) ------------------------
+  #   f1 = JS(P_ref(D_f) || P(D_f))    match the reference's distribution
+  #   f2 = L_r                          retain loss
+  #   f3 = ||dtheta|| / ||theta_0||     edit cost
+  #
+  # f3 is the only objective that never reads the data, which is what keeps it
+  # independent of f2. Measured rank correlation against f2 on random
+  # candidates: +0.36 for this, +0.74 for the KL the predecessor used as f3.
+
+  # --- operators ---------------------------------------------------------
+  # The library contains only the safe eight; REINIT and SIGN_FLIP are not
+  # implemented here at all. max_level caps every ladder at its two gentlest
+  # rungs -- MASK touches 1-5% of connections, RANDOM_PRUNE 5-15%, NOISE
+  # sigma 0.5-1.0.
+  max_level: 2
+
+  # --- selection ---------------------------------------------------------
+  # Class-informed: score connections by |W| * (rms_f - rms_r), i.e. weights
+  # responding more to frogs than to the other nine classes. PRUNE and
+  # RANDOM_PRUNE keep their own data-free rules as controls.
+  selection_rule: class_contrast
+
+  # --- screening fidelity -------------------------------------------------
+  # Cheap stage. Every reported number is re-measured at full fidelity by
+  # evaluate_class_front.py; on the predecessor's fronts, subsets this size gave
+  # rank correlation +0.65 to +0.72 against full fidelity -- usable for
+  # screening, not for reporting.
+  #
+  # The TEST loaders are never subset, so D_f_test and D_r_test are always the
+  # full 1 000 / 9 000.
+  forget_subset_size: 64
+  retain_subset_size: 256
+  batch_size_key: train
+  batch_cap: 3
+  num_workers: 0
+
+  # Diagnostic only. Members are forget-class TRAIN images, non-members are
+  # forget-class TEST images. Nothing reads it back into an objective.
+  compute_mia: true
+
+search:
+  name: plan_a_frog
+  algorithm: nsga2
+
+  # MicroGA: a small population over many generations, which is what makes
+  # same-day iteration possible. Watch the front sizes in the generation log --
+  # if they read [10] from an early generation and the best objectives stop
+  # moving, the run needs restarts rather than more generations.
+  population_size: 10
+  generations: 50
+  seed: 42
+
+  crossover_probability: 0.9
+  mutation_probability: 0.10
+  p_active: 0.5
+
+  normalise_objectives: true
+  cache_objectives: true
+  checkpoint_every_generation: true
+
+  results_dir: results/search/plan_a_frog
