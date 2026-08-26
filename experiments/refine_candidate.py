@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,80 @@ from medus_class.search import Chromosome, ChromosomeBounds  # noqa: E402
 from medus_class.utils.config import PROJECT_ROOT, load_config, resolve_path  # noqa: E402
 
 
+def assert_batchnorm_frozen(model: nn.Module) -> int:
+    """Every BatchNorm module must be in eval mode. Returns how many were checked.
+
+    Asserted rather than assumed, because getting this wrong is silent and
+    catastrophic: the first version of this script called ``model.train()``, and
+    eight batches of D_r re-estimated ``running_mean``/``running_var`` from
+    retain data. That undid the DAMP|MASK edit on the forget class -- D_f_test
+    went 0.0830 -> 0.6700 -- while the weights moved by 3e-5 and every
+    weight-based guard reported success.
+    """
+    checked = 0
+    for name, module in model.named_modules():
+        if isinstance(module, nn.modules.batchnorm._BatchNorm):
+            checked += 1
+            if module.training:
+                raise RuntimeError(
+                    f"BatchNorm module {name!r} is in training mode; its running "
+                    f"statistics would update during the refinement step and the "
+                    f"result would measure recalibration rather than gradients."
+                )
+    return checked
+
+
+@torch.no_grad()
+def movement_report(
+    model: nn.Module, anchor: dict[str, torch.Tensor]
+) -> dict[str, float]:
+    """Relative movement, split into weights and BatchNorm buffers.
+
+    The two are reported separately and on purpose. Buffers are not edits -- a
+    strategy should not be charged for them -- but they *do* change the model's
+    behaviour, so a refinement that moves them is not doing what it claims. The
+    previous run measured only weights and therefore could not see the
+    recalibration that produced its entire effect.
+
+    ``num_batches_tracked`` is an integer counter, excluded from the norms and
+    reported as a separate count: any change to it proves BatchNorm updated.
+    """
+    current = model.state_dict()
+
+    def relative(names: list[str]) -> float:
+        moved_sq, base_sq = 0.0, 0.0
+        for name in names:
+            base = anchor[name].detach().to(torch.float64)
+            now = current[name].detach().to(base.device, torch.float64)
+            moved_sq += float((now - base).pow(2).sum().item())
+            base_sq += float(base.pow(2).sum().item())
+        if base_sq <= 0.0:
+            return 0.0
+        return math.sqrt(moved_sq) / math.sqrt(base_sq)
+
+    weight_names, buffer_names, counters = [], [], []
+    for name, tensor in anchor.items():
+        if name.endswith("num_batches_tracked"):
+            counters.append(name)
+        elif not torch.is_floating_point(tensor):
+            continue
+        elif name.endswith("weight") or name.endswith("bias"):
+            weight_names.append(name)
+        else:                       # running_mean, running_var
+            buffer_names.append(name)
+
+    counter_changes = sum(
+        1 for name in counters
+        if int(current[name].item()) != int(anchor[name].item())
+    )
+
+    return {
+        "parameter_movement": relative(weight_names),
+        "buffer_movement": relative(buffer_names),
+        "batchnorm_counters_changed": counter_changes,
+    }
+
+
 def one_step(
     model: nn.Module, loader, device: str, lr: float, ascend: bool, batches: int
 ) -> float:
@@ -69,8 +144,17 @@ def one_step(
     descent lowers it on ``D_r`` (repair). Gradients are accumulated and a single
     ``step()`` is taken, so this is one update on a low-variance gradient rather
     than ``batches`` separate noisy ones.
+
+    **The model stays in eval mode throughout.** Gradients flow perfectly well in
+    eval mode; what eval mode changes is that BatchNorm uses its stored running
+    statistics instead of recomputing and updating them from the batch. This
+    architecture has no dropout, so eval mode costs nothing else. That is the
+    whole fix: the refinement now tests gradient weight updates, which is what it
+    was always supposed to test.
     """
-    model.train()
+    model.eval()
+    assert_batchnorm_frozen(model)
+
     optimiser = torch.optim.SGD(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
     optimiser.zero_grad(set_to_none=True)
@@ -141,6 +225,10 @@ def main() -> int:
     parser.add_argument("--max-edit-cost", type=float, default=0.30,
                         help="Reject if total movement from W_0 exceeds this "
                              "relative norm.")
+    parser.add_argument("--max-buffer-movement", type=float, default=1e-9,
+                        help="Reject if BatchNorm buffers move at all. Non-zero "
+                             "means the steps recalibrated rather than updated "
+                             "weights.")
     parser.add_argument("--out", default="results/search/plan_a_frog_refined")
     args = parser.parse_args()
 
@@ -183,6 +271,7 @@ def main() -> int:
     print(f"  batches/step  {args.batches}     delta budget {args.max_delta}")
 
     stages: list[dict[str, Any]] = []
+    cstar_anchor: dict[str, Any] | None = None
 
     n_f = len(evaluator.loaders.forget_test.dataset)
     n_r = len(evaluator.loaders.retain_test.dataset)
@@ -204,6 +293,11 @@ def main() -> int:
         measured["edit_cost"] = relative_parameter_delta(
             model, evaluator._original_state
         )
+        # Movement since C*, split so BatchNorm drift cannot hide inside a
+        # weight-only number. Against the C* anchor, not W_0: this reports what
+        # the REFINEMENT did, on top of what the chromosome already did.
+        if cstar_anchor is not None:
+            measured.update(movement_report(model, cstar_anchor))
         measured["full_test_acc"] = (
             n_f * measured["forget_test_acc"] + n_r * measured["retain_test_acc"]
         ) / (n_f + n_r)
@@ -228,7 +322,21 @@ def main() -> int:
     # Stage 0 -- the strategy exactly as the search produced it.
     evaluator.evaluate(chromosome)
     model = evaluator.model
+    # Full state_dict: weights AND BatchNorm buffers, so movement_report can
+    # measure both against the same fixed point.
     anchor = {k: v.detach().clone() for k, v in model.state_dict().items()}
+    cstar_anchor = anchor
+
+    # The model object sits in PyTorch's default training=True state: nothing in
+    # the evaluator switches it globally, because every component that runs a
+    # forward pass sets eval mode locally and restores it (metrics.evaluate and
+    # the selector's _input_activation_norms both do). That is harmless for the
+    # search -- no forward pass ever runs with BatchNorm live -- but the
+    # refinement takes gradient steps here, so the mode has to be made explicit
+    # rather than inherited.
+    model.eval()
+    frozen = assert_batchnorm_frozen(model)
+    print(f"  BatchNorm     {frozen} modules verified frozen (eval mode)")
     record("C* (search output)", model)
 
     # Stage 1 -- one clipped forget ascent step.
@@ -250,14 +358,18 @@ def main() -> int:
     print("BEFORE / AFTER")
     print("-" * 100)
     print(f"  {'stage':<22}{'D_f acc':>9}{'D_f_test':>10}{'D_r acc':>9}"
-          f"{'D_r_test':>10}{'S':>9}")
-    for s in stages:
-        print(f"  {s['stage']:<22}{s['forget_train_acc']:>9.4f}"
-              f"{s['forget_test_acc']:>10.4f}{s['retain_train_acc']:>9.4f}"
-              f"{s['retain_test_acc']:>10.4f}{s['selectivity_S']:>9.3f}")
+          f"{'D_r_test':>10}{'S':>10}{'dW':>10}{'dBN':>10}")
+    for stage in stages:
+        print(f"  {stage['stage']:<22}{stage['forget_train_acc']:>9.4f}"
+              f"{stage['forget_test_acc']:>10.4f}{stage['retain_train_acc']:>9.4f}"
+              f"{stage['retain_test_acc']:>10.4f}{stage['selectivity_S']:>10.3f}"
+              f"{stage.get('parameter_movement', float('nan')):>10.6f}"
+              f"{stage.get('buffer_movement', float('nan')):>10.6f}")
     print(f"  {'reference (target)':<22}{reference['forget_train_acc']:>9.4f}"
           f"{reference['forget_test_acc']:>10.4f}{reference['retain_train_acc']:>9.4f}"
-          f"{reference['retain_test_acc']:>10.4f}{'--':>9}")
+          f"{reference['retain_test_acc']:>10.4f}{'--':>10}{'--':>10}{'--':>10}")
+    print()
+    print("  dW = parameter movement since C*,  dBN = BatchNorm buffer movement")
 
     before, after = stages[0], final
     drop = before["retain_test_acc"] - after["retain_test_acc"]
@@ -275,12 +387,23 @@ def main() -> int:
         and after["retain_test_loss"] <= before["retain_test_loss"] * args.max_loss_ratio
     )
     edit_reasonable = after["edit_cost"] <= args.max_edit_cost
+    # Movement of the refinement itself, measured against C*.
+    param_moved = after.get("parameter_movement", float("nan"))
+    buffer_moved = after.get("buffer_movement", float("nan"))
+    counters_changed = int(after.get("batchnorm_counters_changed", 0))
+    param_in_budget = param_moved <= args.max_delta * 2 + 1e-12
+    # BatchNorm must not have moved AT ALL. Anything else means the steps were
+    # recalibrating rather than updating weights, which is the exact failure the
+    # previous run hit and could not see.
+    buffers_frozen = buffer_moved <= args.max_buffer_movement and counters_changed == 0
 
     checks = {
         "forget improved on D_f_test": forget_improved,
         f"D_r_test drop <= {args.max_retain_drop:.3f}": retain_held,
         f"no utility collapse (retain losses <= {args.max_loss_ratio}x)": no_collapse,
         f"edit cost <= {args.max_edit_cost}": edit_reasonable,
+        f"parameter movement <= {args.max_delta * 2:.4f}": param_in_budget,
+        "BatchNorm buffers unchanged": buffers_frozen,
     }
     accepted = all(checks.values())
 
@@ -298,6 +421,9 @@ def main() -> int:
             "batches_per_step": args.batches,
             "steps": "one optimiser step per stage, on the mean gradient",
             "gradient_norm_clipping": None,
+            "batchnorm": "FROZEN -- model held in eval mode for both steps; "
+                         "running_mean/running_var/num_batches_tracked cannot update",
+            "max_buffer_movement": args.max_buffer_movement,
             "movement_budget_relative": args.max_delta,
             "max_retain_test_drop": args.max_retain_drop,
             "max_loss_ratio": args.max_loss_ratio,
@@ -308,6 +434,10 @@ def main() -> int:
         "reference_Wref": reference,
         "stages": stages,
         "retain_test_drop": drop,
+        "parameter_movement": param_moved,
+        "buffer_movement": buffer_moved,
+        "batchnorm_counters_changed": counters_changed,
+        "batchnorm_frozen": True,
         "acceptance_checks": checks,
         "accepted": accepted,
     }, indent=2), encoding="utf-8")
