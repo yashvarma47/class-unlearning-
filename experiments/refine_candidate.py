@@ -50,6 +50,7 @@ import torch.nn as nn
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from medus_class.evaluation import ClassEvaluator  # noqa: E402
+from medus_class.evaluation.privacy import compute_mia_auc  # noqa: E402
 from medus_class.evaluation.objectives import (  # noqa: E402
     relative_parameter_delta,
     selectivity,
@@ -131,8 +132,15 @@ def main() -> int:
     parser.add_argument("--batches", type=int, default=8)
     parser.add_argument("--max-delta", type=float, default=0.02,
                         help="Relative weight-movement budget per step.")
-    parser.add_argument("--max-retain-drop", type=float, default=0.02,
-                        help="Refuse to save if D_r_test accuracy falls by more.")
+    parser.add_argument("--max-retain-drop", type=float, default=0.01,
+                        help="Reject if D_r_test accuracy falls by more than this.")
+    parser.add_argument("--max-loss-ratio", type=float, default=1.25,
+                        help="Reject if a retain LOSS grows by more than this "
+                             "factor. Accuracy can hold while calibration "
+                             "collapses, so loss is the earlier warning.")
+    parser.add_argument("--max-edit-cost", type=float, default=0.30,
+                        help="Reject if total movement from W_0 exceeds this "
+                             "relative norm.")
     parser.add_argument("--out", default="results/search/plan_a_frog_refined")
     args = parser.parse_args()
 
@@ -176,12 +184,43 @@ def main() -> int:
 
     stages: list[dict[str, Any]] = []
 
+    n_f = len(evaluator.loaders.forget_test.dataset)
+    n_r = len(evaluator.loaders.retain_test.dataset)
+
     def record(label: str, model) -> dict[str, float]:
-        measured = evaluator.measure_sets(model)
+        # keep_per_sample so the MIA can be recomputed at every stage: a
+        # refinement that improved forgetting while making membership MORE
+        # detectable would be a bad trade, and invisible without it.
+        measured = evaluator.measure_sets(
+            model, keep_per_sample=True, include_retain_test=True
+        )
         measured["selectivity_S"] = selectivity(
             measured["forget_train_loss"], measured["retain_train_loss"],
             original["forget_train_loss"], original["retain_train_loss"],
         )
+        # Edit cost is always measured against W_0, never against the previous
+        # stage: it is the total surgery the model has undergone, and the
+        # gradient steps add to the chromosome's edit rather than replacing it.
+        measured["edit_cost"] = relative_parameter_delta(
+            model, evaluator._original_state
+        )
+        measured["full_test_acc"] = (
+            n_f * measured["forget_test_acc"] + n_r * measured["retain_test_acc"]
+        ) / (n_f + n_r)
+        try:
+            measured["mia_auc"] = compute_mia_auc(
+                member_loss=evaluator._last_forget_train.per_sample_loss,
+                member_confidence=evaluator._last_forget_train.per_sample_confidence,
+                nonmember_loss=evaluator._last_forget_test.per_sample_loss,
+                nonmember_confidence=evaluator._last_forget_test.per_sample_confidence,
+            ).auc
+        except Exception:  # noqa: BLE001 -- a diagnostic must not fail the run
+            measured["mia_auc"] = float("nan")
+
+        for key in ("forget_train_acc", "forget_test_acc",
+                    "retain_train_acc", "retain_test_acc"):
+            measured[f"gap_{key}"] = measured[key] - reference[key]
+
         measured["stage"] = label
         stages.append(measured)
         return measured
@@ -220,29 +259,76 @@ def main() -> int:
           f"{reference['forget_test_acc']:>10.4f}{reference['retain_train_acc']:>9.4f}"
           f"{reference['retain_test_acc']:>10.4f}{'--':>9}")
 
-    drop = stages[0]["retain_test_acc"] - final["retain_test_acc"]
+    before, after = stages[0], final
+    drop = before["retain_test_acc"] - after["retain_test_acc"]
+
+    # --- the acceptance rule ------------------------------------------------
+    # Four conditions, ALL required. The point of stating them as data rather
+    # than as one boolean is that a rejection has to say which one failed --
+    # "the refinement did not help" is not a reportable finding on its own.
+    forget_improved = after["forget_test_acc"] < before["forget_test_acc"]
+    retain_held = drop <= args.max_retain_drop
+    # Utility collapse: retain loss is the early-warning signal, because
+    # accuracy can hold while the model becomes badly calibrated on D_r.
+    no_collapse = (
+        after["retain_train_loss"] <= before["retain_train_loss"] * args.max_loss_ratio
+        and after["retain_test_loss"] <= before["retain_test_loss"] * args.max_loss_ratio
+    )
+    edit_reasonable = after["edit_cost"] <= args.max_edit_cost
+
+    checks = {
+        "forget improved on D_f_test": forget_improved,
+        f"D_r_test drop <= {args.max_retain_drop:.3f}": retain_held,
+        f"no utility collapse (retain losses <= {args.max_loss_ratio}x)": no_collapse,
+        f"edit cost <= {args.max_edit_cost}": edit_reasonable,
+    }
+    accepted = all(checks.values())
 
     out_dir = resolve_path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "refinement.json").write_text(json.dumps({
         "front_position": member.get("front_position"),
         "chromosome": member["chromosome"],
+        "operators": member.get("operators", ""),
         "hyperparameters": {
-            "forget_lr": args.forget_lr, "retain_lr": args.retain_lr,
-            "batches": args.batches, "max_delta": args.max_delta,
+            "forget_step": "SGD gradient ASCENT on cross-entropy over D_f",
+            "retain_step": "SGD gradient DESCENT on cross-entropy over D_r",
+            "forget_lr": args.forget_lr,
+            "retain_lr": args.retain_lr,
+            "batches_per_step": args.batches,
+            "steps": "one optimiser step per stage, on the mean gradient",
+            "gradient_norm_clipping": None,
+            "movement_budget_relative": args.max_delta,
+            "max_retain_test_drop": args.max_retain_drop,
+            "max_loss_ratio": args.max_loss_ratio,
+            "max_edit_cost": args.max_edit_cost,
+            "seed": evaluator.seed,
         },
-        "original": original,
-        "reference": reference,
+        "original_W0": original,
+        "reference_Wref": reference,
         "stages": stages,
         "retain_test_drop": drop,
-        "accepted": bool(drop <= args.max_retain_drop),
+        "acceptance_checks": checks,
+        "accepted": accepted,
     }, indent=2), encoding="utf-8")
 
+    print("\n" + "-" * 100)
+    print("ACCEPTANCE RULE")
+    print("-" * 100)
+    for name, passed in checks.items():
+        print(f"  [{'PASS' if passed else 'FAIL'}]  {name}")
+
     print("\n" + "=" * 100)
-    if drop > args.max_retain_drop:
-        print(f"REFINEMENT REJECTED -- D_r_test fell {drop:.4f}, budget "
-              f"{args.max_retain_drop}")
-        print("Checkpoint NOT written. The search output stands.")
+    if not accepted:
+        failed = [n for n, ok in checks.items() if not ok]
+        print("REFINEMENT REJECTED")
+        print(f"  failed: {'; '.join(failed)}")
+        print(f"  D_f_test {before['forget_test_acc']:.4f} -> "
+              f"{after['forget_test_acc']:.4f}")
+        print(f"  D_r_test {before['retain_test_acc']:.4f} -> "
+              f"{after['retain_test_acc']:.4f}  (drop {drop:+.4f})")
+        print("\n  Checkpoint NOT written. C* from the Plan A search stands as")
+        print("  the main result.")
     else:
         path = out_dir / "refined_best.pt"
         save_checkpoint(
@@ -264,8 +350,13 @@ def main() -> int:
                 ),
             ),
         )
-        print(f"REFINEMENT ACCEPTED -- D_r_test change {-drop:+.4f}")
-        print(f"wrote {path.relative_to(PROJECT_ROOT)}")
+        print("REFINEMENT ACCEPTED -- all four conditions hold")
+        print(f"  D_f_test {before['forget_test_acc']:.4f} -> "
+              f"{after['forget_test_acc']:.4f}")
+        print(f"  D_r_test {before['retain_test_acc']:.4f} -> "
+              f"{after['retain_test_acc']:.4f}  (drop {drop:+.4f})")
+        print()
+        print(f"  wrote {path.relative_to(PROJECT_ROOT)}")
 
     print(f"wrote {(out_dir / 'refinement.json').relative_to(PROJECT_ROOT)}")
     return 0
