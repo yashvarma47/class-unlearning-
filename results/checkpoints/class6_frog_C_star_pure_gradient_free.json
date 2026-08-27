@@ -1,0 +1,22 @@
+{
+  "model_name": "resnet18",
+  "dataset": "cifar10",
+  "seed": 42,
+  "epoch": 0,
+  "metrics": {
+    "f1_js": 0.3637044870376587,
+    "f2_retain_train_loss": 0.01890545732975006,
+    "f3_edit_cost": 0.1450542156247325,
+    "forget_test_acc": 0.083,
+    "retain_test_acc": 0.9252222222222222,
+    "forget_train_acc": 0.0724,
+    "retain_train_acc": 0.9943111111111111,
+    "selectivity_S": 281.7640363277703
+  },
+  "split_file": "results/splits/cifar10_class6_frog.json",
+  "training_config": null,
+  "notes": "PURE GRADIENT-FREE C*: Pareto-front member #8 of the Plan A frog search, rebuilt by replaying its recorded chromosome through the same deterministic operators against W_0. No gradient step was ever applied. operators=DAMP|MASK chromosome=0 0 0 1 1 0 0 2 0 0 0 1 2 0 2 0 0 3 0 1 2 0 1 0 0 1 0 2 0 0 source_front=results/search/plan_a_frog/full_fidelity/front_full_fidelity.csv",
+  "created_at": "2026-08-27T14:23:33+00:00",
+  "torch_version": "2.5.1+cu121",
+  "format_version": 1
+}
