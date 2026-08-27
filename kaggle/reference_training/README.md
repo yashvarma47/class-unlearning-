@@ -46,12 +46,19 @@ Assignments, once we get there:
 ### 1. Build and upload the code dataset
 
 ```bash
-python scripts/package_for_kaggle.py
+python scripts/package_for_kaggle.py --profile reference
 ```
 
 Upload `dist/medus_class_code.zip` as a Kaggle Dataset named **`medus-class-code`**.
 Kaggle auto-extracts it. **No weights dataset is needed** — reference training starts
-from random initialisation.
+from random initialisation and builds its own split per class.
+
+`--profile reference` matters. Without it the script builds a *search* bundle and stages
+`dist/medus_class_weights/` containing `W_0` and a class split — and the class it picks is
+whatever `--forget-class` says, defaulting to 6. A reference-training upload that arrives
+carrying a frog split next to cat/deer/dog is confusing at best and, if anyone wires it in,
+wrong. The reference profile ships no weights directory at all, so there is nothing to
+mis-wire.
 
 ### 2. Create the notebook
 
