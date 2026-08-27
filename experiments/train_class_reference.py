@@ -73,6 +73,11 @@ from medus_class.utils.config import PROJECT_ROOT, load_config, resolve_path  # 
 from medus_class.utils.device import describe_environment, get_device  # noqa: E402
 from medus_class.utils.seeding import seed_everything  # noqa: E402
 
+#: ``(D_f_train, D_r_train, D_f_test, D_r_test)``. CIFAR-10 holds 5 000 training
+#: and 1 000 test images per class, exactly, so holding out any one class gives
+#: these four sizes regardless of which class it is.
+EXPECTED_SPLIT_SIZES = (5_000, 45_000, 1_000, 9_000)
+
 CSV_COLUMNS = [
     "epoch", "train_loss", "train_acc",
     "retain_test_loss", "retain_test_acc",
@@ -118,6 +123,19 @@ def main() -> int:
     parser.add_argument("--base-config", default="base.yaml")
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--run-name", default=None)
+    # Overriding the forget class is what lets one script produce all ten
+    # references. Default None means "use the config", so every existing
+    # invocation behaves exactly as before -- the frog reference in the repo was
+    # produced by this script with neither flag set.
+    parser.add_argument(
+        "--forget-class", type=int, default=None,
+        help="CIFAR-10 label 0-9 to hold out, overriding split.forget_class",
+    )
+    parser.add_argument(
+        "--split-file", default=None,
+        help="where the class split lives; derived from --forget-class when "
+             "that is given and this is not",
+    )
     args = parser.parse_args()
 
     cfg = load_config(args.base_config)
@@ -127,6 +145,25 @@ def main() -> int:
     data_cfg = cfg["data"]
     model_cfg = cfg["model"]
     training = cfg["training"]
+    if args.forget_class is not None:
+        if not 0 <= args.forget_class < len(CIFAR10_CLASS_NAMES):
+            raise SystemExit(
+                f"--forget-class must be a CIFAR-10 label 0-9, got "
+                f"{args.forget_class}"
+            )
+        cfg["split"]["forget_class"] = int(args.forget_class)
+        # The split file must follow the class. get_or_create_class_split
+        # refuses a split built for a different class, so leaving the frog path
+        # in place would abort rather than corrupt anything -- but deriving it
+        # here is what makes the override usable.
+        name = CIFAR10_CLASS_NAMES[args.forget_class]
+        cfg["split"]["split_file"] = (
+            args.split_file
+            or f"results/splits/cifar10_class{args.forget_class}_{name}.json"
+        )
+    elif args.split_file is not None:
+        cfg["split"]["split_file"] = args.split_file
+
     forget_class = int(cfg["split"]["forget_class"])
     class_name = CIFAR10_CLASS_NAMES[forget_class]
 
@@ -166,6 +203,25 @@ def main() -> int:
     print(f"  D_r_test          {split.retain_test.size}   <- selection criterion")
     print(f"  device            {device}")
     print(f"  epochs            {total_epochs}")
+
+    # CIFAR-10 is exactly balanced, so these four numbers are the same for every
+    # forget class. Anything else means the split is wrong, and four hours of
+    # GPU time would produce a reference for a set nobody can name. Checked
+    # before the first epoch rather than after.
+    actual_sizes = (
+        int(split.forget_train.size), int(split.retain_train.size),
+        int(split.forget_test.size), int(split.retain_test.size),
+    )
+    if actual_sizes != EXPECTED_SPLIT_SIZES:
+        raise SystemExit(
+            f"ABORT: split sizes are wrong for class {forget_class} "
+            f"({class_name}).\n"
+            f"  expected (D_f_train, D_r_train, D_f_test, D_r_test) = "
+            f"{EXPECTED_SPLIT_SIZES}\n"
+            f"  measured                                            = "
+            f"{actual_sizes}\n"
+            f"  split file: {cfg['split']['split_file']}"
+        )
 
     train_loader = make_loader(
         Subset(bundle.train_augmented, split.retain_train.tolist()),

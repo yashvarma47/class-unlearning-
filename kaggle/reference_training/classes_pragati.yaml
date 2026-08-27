@@ -1,0 +1,11 @@
+# Pragati's share of the 10-class sweep. DO NOT RUN until Yash confirms the ship
+# trial passed validation. See FRIEND_INSTRUCTIONS.md.
+
+assigned_person: Pragati
+classes:
+  - id: 3
+    name: cat
+  - id: 4
+    name: deer
+  - id: 5
+    name: dog

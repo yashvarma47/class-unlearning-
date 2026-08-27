@@ -1,0 +1,16 @@
+# Yash's share of the 10-class sweep. DO NOT RUN until the ship trial has passed
+# local validation -- see README.md.
+#
+# ship (8) is deliberately absent: it is the trial class and will already be
+# done. frog (6) is absent because its reference is finished and committed;
+# retraining it would replace the model every existing frog result was measured
+# against.
+
+assigned_person: Yash
+classes:
+  - id: 0
+    name: airplane
+  - id: 1
+    name: automobile
+  - id: 2
+    name: bird

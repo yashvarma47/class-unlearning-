@@ -1,0 +1,15 @@
+# TRIAL RUN -- one class only.
+#
+# This is the first Kaggle reference-training run of the class-level sweep. It
+# trains ONE model so the whole workflow can be checked end to end before anyone
+# else is asked to run anything. Nobody trains in parallel until the ship
+# checkpoint has passed local validation.
+#
+# The driver trains exactly the classes listed below and nothing else. There is
+# no "all classes" fallback: an empty or missing `classes` list is an error, not
+# a licence to train everything.
+
+assigned_person: Yash
+classes:
+  - id: 8
+    name: ship

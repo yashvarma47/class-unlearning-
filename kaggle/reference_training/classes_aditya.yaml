@@ -1,0 +1,9 @@
+# Aditya's share of the 10-class sweep. DO NOT RUN until Yash confirms the ship
+# trial passed validation. See FRIEND_INSTRUCTIONS.md.
+
+assigned_person: Aditya
+classes:
+  - id: 7
+    name: horse
+  - id: 9
+    name: truck
