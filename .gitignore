@@ -15,12 +15,34 @@ results/*.out
 results/*.err
 results/*_log.csv
 results/*_environment.json
-results/checkpoints/
-results/search/
+
+# Contents ignored, NOT the directories themselves. Git cannot re-include a
+# file whose parent directory is excluded, and the four checkpoints below have
+# to be re-includable -- see docs/artifact_manifest.md.
+results/checkpoints/*
+results/search/*
 
 # Kept: the class-structure measurement that motivates the whole project.
 !results/analysis/
 !results/analysis/**
 !results/splits/
 !results/splits/**
+
+# --- checkpoints that ARE part of the published result ---------------------
+# Stored through Git LFS (see .gitattributes). These four are the whole
+# reproducible chain: the model unlearned FROM, the reference f1 is measured
+# against, and the two results. The *_final / *_latest reference checkpoints and
+# the dist/ copy of W_0 are training bookkeeping and duplicates -- they stay
+# external, because LFS quota is finite and nothing reads them.
+!results/checkpoints/cifar10_resnet18_seed42_best.pt
+!results/checkpoints/class6_frog_reference_best_dr.pt
+!results/checkpoints/class6_frog_C_star_pure_gradient_free.pt
+!results/search/plan_a_frog_bn_frozen_refined/
+!results/search/plan_a_frog_bn_frozen_refined/refined_best.pt
+
+# Their provenance sidecars are plain JSON and belong in git normally.
+!results/checkpoints/cifar10_resnet18_seed42_best.json
+!results/checkpoints/class6_frog_reference_best_dr.json
+!results/checkpoints/class6_frog_C_star_pure_gradient_free.json
+
 dist/

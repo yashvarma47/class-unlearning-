@@ -1,0 +1,42 @@
+{
+  "model_name": "resnet18",
+  "dataset": "cifar10",
+  "seed": 42,
+  "epoch": 163,
+  "metrics": {
+    "train_loss": 0.003001868816734188,
+    "train_acc": 0.9996666666666667,
+    "retain_test_acc": 0.9458888888888889,
+    "retain_test_loss": 0.21908223544226751,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 10.185291137695312,
+    "full_test_acc": 0.8513,
+    "best_retain_test_acc": 0.9458888888888889,
+    "best_retain_test_loss": 0.21908223544226751,
+    "forget_class": 6
+  },
+  "split_file": "results/splits/cifar10_class6_frog.json",
+  "training_config": {
+    "train_size": 45000,
+    "epochs": 200,
+    "batch_size": 64,
+    "optimizer": {
+      "name": "sgd",
+      "lr": 0.1,
+      "momentum": 0.9,
+      "weight_decay": 0.0005
+    },
+    "scheduler": {
+      "name": "step",
+      "step_size": 40,
+      "gamma": 0.1
+    },
+    "precision": "fp32",
+    "forget_class": 6,
+    "run_name": "class6_frog_reference"
+  },
+  "notes": "W_ref for CLASS unlearning: trained on D_r only (45000 images), class 6 (frog) EXCLUDED. Checkpoint selection is on D_r_test accuracy then D_r_test loss; D_f_test is diagnostic only.",
+  "created_at": "2026-08-26T18:34:51+00:00",
+  "torch_version": "2.5.1+cu121",
+  "format_version": 1
+}

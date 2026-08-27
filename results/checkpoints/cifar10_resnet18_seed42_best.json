@@ -1,0 +1,18 @@
+{
+  "model_name": "resnet18",
+  "dataset": "cifar10",
+  "seed": 42,
+  "epoch": 199,
+  "metrics": {
+    "train_loss": 0.0030266081797331573,
+    "train_acc": 0.99982,
+    "test_loss": 0.19838133454322815,
+    "test_acc": 0.9479,
+    "best_test_acc": 0.9479
+  },
+  "split_file": null,
+  "notes": "original model, trained on the FULL CIFAR-10 training set (includes D_f); fp32, amp disabled",
+  "created_at": "2026-08-09T14:38:47+00:00",
+  "torch_version": "2.5.1+cu121",
+  "format_version": 1
+}
