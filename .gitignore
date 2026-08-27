@@ -41,6 +41,15 @@ results/reference_training/staging/
 !results/splits/
 !results/splits/**
 
+# --- ship (class 8) Plan A run --------------------------------------------
+# Same treatment the frog run's tracked files get: the small summaries, fronts,
+# figure and reports are the result and belong in git. evaluation_history.csv is
+# every evaluation including failures -- useful for post-hoc analysis, too noisy
+# to track -- and no *.pt is produced by a search anyway.
+!results/search/plan_a_ship/
+!results/search/plan_a_ship/**
+results/search/plan_a_ship/evaluation_history.csv
+
 # --- checkpoints that ARE part of the published result ---------------------
 # Stored through Git LFS (see .gitattributes). These four are the whole
 # reproducible chain: the model unlearned FROM, the reference f1 is measured

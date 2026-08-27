@@ -1,0 +1,40 @@
+{
+  "name": "plan_a_ship",
+  "config": "search/plan_a_ship.yaml",
+  "generations": 50,
+  "population_size": 10,
+  "evaluated": 230,
+  "cache_hits": 280,
+  "failures": 0,
+  "elapsed_seconds": 468.1,
+  "runtime_per_individual": {
+    "n": 230,
+    "total": 467.8,
+    "mean": 2.034,
+    "min": 1.463,
+    "max": 3.36
+  },
+  "forget_class": 8,
+  "reference_checkpoint": "results/checkpoints/class8_ship_reference_best_dr.pt",
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0010594730265438557,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0008805799880065024,
+    "forget_test_acc": 0.965,
+    "forget_test_loss": 0.13434823656082154,
+    "retain_test_acc": 0.946,
+    "retain_test_loss": 0.2054960947036743
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 10.447216033935547,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.000796783046098426,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 10.36017529296875,
+    "retain_test_acc": 0.9502222222222222,
+    "retain_test_loss": 0.19860945998297796
+  },
+  "front_size": 10
+}

@@ -48,12 +48,13 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from medus_class.data import CIFAR10_CLASS_NAMES  # noqa: E402
 from medus_class.evaluation import ClassEvaluator  # noqa: E402
 from medus_class.search import Chromosome, ChromosomeBounds  # noqa: E402
 from medus_class.utils.config import PROJECT_ROOT, load_config, resolve_path  # noqa: E402
 
 #: Below this on D_r_test, a candidate has broken the model and its forgetting
-#: number is meaningless -- anything forgets frogs if it forgets everything.
+#: number is meaningless -- anything forgets a class if it forgets everything.
 MIN_USABLE_RETAIN_TEST_ACC = 0.80
 
 
@@ -103,7 +104,11 @@ def main() -> int:
         print(f"  {label:<12}{m['forget_train_acc']:>10.4f}{m['forget_train_loss']:>11.4f}"
               f"{m['retain_train_acc']:>10.4f}{m['retain_train_loss']:>11.4f}"
               f"{m['forget_test_acc']:>11.4f}{m['retain_test_acc']:>11.4f}")
-    print("\n  The reference is the target. It never saw a frog, so its D_f_test")
+    # Named from the split rather than hard-coded: this script now runs for
+    # classes other than frog, and a console line that says "frog" during a
+    # ship run is exactly what makes someone doubt the rest of the log.
+    print(f"\n  The reference is the target. It never saw a "
+          f"{CIFAR10_CLASS_NAMES[evaluator.forget_class]}, so its D_f_test")
     print("  accuracy is what 'forgotten' actually looks like -- not zero.")
 
     bounds = ChromosomeBounds.from_registry(

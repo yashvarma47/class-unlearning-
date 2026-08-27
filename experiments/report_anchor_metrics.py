@@ -210,6 +210,19 @@ def main() -> int:
     parser.add_argument("--max-shadow-per-group", type=int, default=None,
                         help="cap each anchor-MIA shadow group; omit to "
                              "reproduce the anchor exactly")
+    # Off by default so the frog invocation that produced
+    # results/literature_alignment/frog_anchor_metrics.csv still yields exactly
+    # that file.
+    parser.add_argument("--best-s", action="store_true",
+                        help="also measure the front's highest-selectivity "
+                             "member, when it is not the selected C*")
+    parser.add_argument("--extra-position", type=int, action="append", default=None,
+                        help="also measure this front member; repeatable. Used "
+                             "when the automatic selection rule and the "
+                             "considered choice disagree and both belong in "
+                             "the report.")
+    parser.add_argument("--label", default=None,
+                        help="prefix for the output file names, e.g. 'ship'")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -264,6 +277,30 @@ def main() -> int:
     rows["C_star"]["kind"] = "PURE GRADIENT-FREE (Pareto front member)"
     rows["C_star"]["operators"] = member["operators"]
 
+    if args.best_s:
+        best = max(front, key=lambda m: float(m["selectivity_S"]))
+        best_position = int(best["front_position"])
+        if best_position == args.front_position:
+            print(f"  best-S member IS C* (front #{best_position}); not measured twice")
+        else:
+            print(f"  rebuilding and measuring best-S front member "
+                  f"(#{best_position}, S={float(best['selectivity_S']):.2f}) ...")
+            rows["best_S"] = measured(rebuild_candidate(evaluator, cfg, best))
+            rows["best_S"]["kind"] = (
+                f"PURE GRADIENT-FREE (Pareto front member #{best_position}, "
+                f"highest selectivity)")
+            rows["best_S"]["operators"] = best["operators"]
+
+    for position in (args.extra_position or []):
+        if position == args.front_position or f"front_{position}" in rows:
+            continue
+        extra = next(m for m in front if int(m["front_position"]) == position)
+        print(f"  rebuilding and measuring front member #{position} ...")
+        rows[f"front_{position}"] = measured(rebuild_candidate(evaluator, cfg, extra))
+        rows[f"front_{position}"]["kind"] = (
+            f"PURE GRADIENT-FREE (Pareto front member #{position})")
+        rows[f"front_{position}"]["operators"] = extra["operators"]
+
     refined_path = resolve_path(args.refined)
     if refined_path.is_file():
         print("  measuring C*_refined_bn_frozen ...")
@@ -285,8 +322,9 @@ def main() -> int:
             original["forget_train_loss"], original["retain_train_loss"],
         ))
 
-    order = [n for n in ("W_0", "W_ref", "C_star", "C_star_refined_bn_frozen")
-             if n in rows]
+    order = ([n for n in ("W_0", "W_ref", "best_S", "C_star") if n in rows]
+             + sorted(n for n in rows if n.startswith("front_"))
+             + [n for n in ("C_star_refined_bn_frozen",) if n in rows])
     columns = [
         "kind", "operators",
         "anchor_ACC_r", "anchor_ACC_f", "anchor_composite", "anchor_MIA",
@@ -304,7 +342,8 @@ def main() -> int:
 
     out_dir = resolve_path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    write_csv(out_dir / "frog_anchor_metrics.csv", order, rows, columns)
+    stem = f"{args.label}_anchor_metrics" if args.label else "frog_anchor_metrics"
+    write_csv(out_dir / f"{stem}.csv", order, rows, columns)
 
     payload = {
         "anchor": {
@@ -319,14 +358,16 @@ def main() -> int:
         "max_shadow_per_group": args.max_shadow_per_group,
         "rows": rows,
     }
-    (out_dir / "frog_anchor_metrics.json").write_text(
+    (out_dir / f"{stem}.json").write_text(
         json.dumps(payload, indent=1, default=str), encoding="utf-8")
 
     # --- console table ----------------------------------------------------
     labels = {
         "W_0": "W_0 (original)",
         "W_ref": "W_ref (retain-only)",
-        "C_star": "C* (front #8)",
+        "best_S": "best-S front member",
+        "C_star": f"C* (front #{args.front_position})",
+        **{f"front_{p}": f"front #{p}" for p in (args.extra_position or [])},
         "C_star_refined_bn_frozen": "C*_refined_bn_frozen",
     }
     display = [
@@ -354,8 +395,8 @@ def main() -> int:
         print(line)
     print("-" * (26 + width * len(order)))
 
-    print(f"\n  wrote {out_dir / 'frog_anchor_metrics.csv'}")
-    print(f"  wrote {out_dir / 'frog_anchor_metrics.json'}")
+    print(f"\n  wrote {out_dir / (stem + '.csv')}")
+    print(f"  wrote {out_dir / (stem + '.json')}")
     print(f"\n  Anchor Table 1 reference rows (CIFAR-10 / ResNet-18, "
           f"mean over all 10 classes):")
     print(f"    Original     ACC_r 94.89  ACC_f 94.89  MIA  0.03")
