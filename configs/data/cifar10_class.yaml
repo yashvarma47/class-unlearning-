@@ -1,0 +1,39 @@
+# CIFAR-10 for CLASS unlearning.
+#
+# The only split mode this project supports: D_f is one whole class, D_r is the
+# other nine. There is no forget_fraction and no split seed because there is no
+# sampling -- the label determines the partition.
+
+data:
+  name: cifar10
+  num_classes: 10
+  image_size: 32
+  root: data/cifar10
+  download: true
+
+  normalize:
+    mean: [0.4914, 0.4822, 0.4465]
+    std: [0.2470, 0.2435, 0.2616]
+
+  augmentation:
+    random_crop: 32
+    random_crop_padding: 4
+    random_horizontal_flip: true
+
+  # Tuned for a 4 GB GTX 1650.
+  batch_size:
+    debug: 32
+    train: 64
+    eval: 128
+
+  num_workers: 2
+  pin_memory: true
+  persistent_workers: true
+
+split:
+  # frog. Chosen by measurement across all ten classes, not by convention:
+  # its class structure rises monotonically with depth (SNR 1.4 -> 10.1 -> 13.1
+  # -> 40.1 -> 48.8 across layer1..fc) and it is the only class with four layer
+  # groups above SNR 10. See docs/class_structure.md.
+  forget_class: 6
+  split_file: results/splits/cifar10_class6_frog.json

@@ -1,5 +1,8 @@
 # Datasets and large binaries are not source.
-data/
+# Anchored to the repo root on purpose: an unanchored 'data/' also matches
+# src/medus_class/data/ and configs/data/, which silently left the CIFAR-10
+# loader and the class-split module untracked.
+/data/
 *.pt
 __pycache__/
 *.py[cod]
