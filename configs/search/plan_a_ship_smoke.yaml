@@ -1,0 +1,20 @@
+# Smoke test of the Plan A SHIP search: population 4, one generation.
+#
+# Mechanical, not scientific. Eight evaluations say nothing about selectivity;
+# they say the loop runs end to end on class 8, no objective returns nan, the
+# class_contrast selector finds connections on the ship split, the ship W_ref is
+# the model f1 is measured against, and the output files are written in the
+# expected shape.
+#
+# Everything except population, generations and results_dir is inherited from
+# plan_a_ship.yaml, so a pass here is evidence about THAT config -- including
+# that it points at the ship reference and the ship split rather than frog's.
+
+_base_:
+  - search/plan_a_ship.yaml
+
+search:
+  name: plan_a_ship_smoke
+  population_size: 4
+  generations: 1
+  results_dir: results/search/plan_a_ship_smoke
