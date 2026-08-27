@@ -122,3 +122,55 @@ Two notes for later:
   `git check-ignore` in both directions: the four are visible, and `*_final.pt`, `*_latest.pt`,
   the `dist/` duplicate, `evaluation_history.csv`, the smoke run, the `.out` logs and `data/` all
   remain ignored.
+
+---
+
+## 6. Ship (class 8) — imported, deliberately **not** in Git LFS
+
+**The ship `W_ref` exists locally.** It was trained on Kaggle (Tesla T4, torch 2.10.0+cu128,
+2.29 h, 200 epochs, seed 42), downloaded as **`reference_outputs_trial_ship.zip`**, validated by
+`kaggle/reference_training/validate_reference_zip.py` (verdict `PASS`), and installed by
+`kaggle/reference_training/import_reference_zip.py`.
+
+Checkpoint **sha256 begins `852fc08e`** (full:
+`852fc08e8cb0c2882996e3d63702c21f8c7e96b013315f277549d3474bd13c5e`), byte-identical to the member
+inside the zip. The zip itself is sha256 `2badb411…`. Measured from its final location: `D_f_test`
+accuracy **0.0000** (loss 10.3602), `D_r_test` accuracy **0.9502** (loss 0.1986), selected epoch
+**181** of 200.
+
+| artifact | path | size | tracked | ignored | disposition |
+|---|---|---:|---|---|---|
+| **ship `W_ref`** | `results/checkpoints/class8_ship_reference_best_dr.pt` | 89,491,299 | **no** | **yes** | **external for now — see below** |
+| provenance sidecar | `results/checkpoints/class8_ship_reference_best_dr.json` | 1,238 | no | yes | external, follows the `.pt` |
+| training log | `results/class8_ship_reference_log.csv` | 16,037 | no | yes | external, follows the `.pt` |
+| environment snapshot | `results/class8_ship_reference_environment.json` | 386 | no | yes | external, follows the `.pt` |
+| training summary | `results/reference_training/class8_ship_training_summary.md` | 1,038 | yes | no | commit normally |
+| Kaggle run manifest | `results/reference_training/class8_ship_kaggle_manifest.json` | 1,045 | yes | no | commit normally |
+| validation summary | `results/reference_training/reference_validation_summary.csv` | — | yes | no | commit normally |
+| baseline wiring check | `results/reference_training/ship_reference_validation.md` | — | yes | no | commit normally |
+| the ship split | `results/splits/cifar10_class8_ship.json` | 397,993 | yes | no | commit normally |
+| the source zip | `reference_outputs_trial_ship.zip` | 83,505,420 | no | **no** | **keep external — do not commit** |
+
+### Why the ship checkpoint is not in LFS
+
+**This is a deliberate hold, not an oversight.** The frog chain — `W_0`, frog `W_ref`, `C*` and
+`C*_refined_bn_frozen`, 256 MiB — is already in LFS and stays there. Adding ship would take that to
+~341 MiB, and the eight remaining references would take it past **1 GiB**, which is the entire free
+GitHub allowance, with bandwidth spent again on every clone.
+
+So the decision for reference checkpoints beyond frog is **pending**. The realistic options, for
+when there is something to decide with:
+
+1. **All ten in LFS** (~1.0–1.1 GiB) — needs a paid LFS data pack.
+2. **Weights-only re-save first.** These files are 85 MiB because they carry optimiser and scheduler
+   state; the weights alone are ~43 MiB. Re-saving the nine *new* references weights-only would put
+   all ten under ~600 MiB. Safe for the new ones — unlike `W_0` and frog `W_ref`, nothing has been
+   measured against a specific byte layout of a file that does not exist yet.
+3. **References stay external** — kept in the Kaggle output zips and a local backup, with only the
+   metadata, logs, checksums and validation reports in git. Cheapest, and the checksums make the
+   external files verifiable.
+
+Until that is decided, the ship `.pt`, its sidecar, its log and its environment file remain
+git-ignored, and `reference_outputs_trial_ship.zip` is not committed either. What *is* committed is
+everything needed to recognise the right file if it turns up again: the sha256, the split, the
+validation verdict and the training log summary.

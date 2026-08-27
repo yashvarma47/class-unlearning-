@@ -22,6 +22,13 @@ results/*_environment.json
 results/checkpoints/*
 results/search/*
 
+# Downloaded Kaggle output bundles. 83 MB each, and there will be one per
+# class -- the checkpoints inside them are imported into results/ and the
+# metadata that survives is committed separately. The zip itself is a
+# transport artefact, and it is NOT ignored by any other rule, so without
+# this line a plain 'git add -A' would stage it.
+reference_outputs_*.zip
+
 # Kaggle reference-training scratch. The staging directory is where finished
 # checkpoints are collected before zipping; the zip is the artefact, and the
 # checkpoints inside it are 85 MB each. The validation summary beside it IS
