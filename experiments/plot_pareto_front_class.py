@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -149,7 +150,11 @@ def main() -> int:
         },
     }
 
-    best_s = max(front, key=lambda r: r["selectivity_S"])
+    # Identity edits have S = nan (a ratio of deltas against W_0, so 0/0), and
+    # every comparison against nan is False -- a plain max() would return the
+    # first nan row and label the UNEDITED model as most selective.
+    finite_s = [r for r in front if math.isfinite(r["selectivity_S"])]
+    best_s = max(finite_s or front, key=lambda r: r["selectivity_S"])
     strongest = min(front, key=lambda r: r["forget_test_acc"])
 
     highlights: dict[int, dict[str, Any]] = {

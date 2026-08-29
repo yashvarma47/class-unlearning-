@@ -1,0 +1,40 @@
+{
+  "name": "plan_a_dog",
+  "config": "search/plan_a_dog.yaml",
+  "generations": 50,
+  "population_size": 10,
+  "evaluated": 231,
+  "cache_hits": 279,
+  "failures": 0,
+  "elapsed_seconds": 419.4,
+  "runtime_per_individual": {
+    "n": 231,
+    "total": 419.19,
+    "mean": 1.815,
+    "min": 1.28,
+    "max": 2.742
+  },
+  "forget_class": 5,
+  "reference_checkpoint": "results/checkpoints/class5_dog_reference_best_dr.pt",
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0015899803256615996,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0009764421556610614,
+    "forget_test_acc": 0.909,
+    "forget_test_loss": 0.37551277923583987,
+    "retain_test_acc": 0.9522222222222222,
+    "retain_test_loss": 0.1787000315454271
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 11.315608978271484,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.00071775505784899,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 11.06705078125,
+    "retain_test_acc": 0.9575555555555556,
+    "retain_test_loss": 0.16644204303953383
+  },
+  "front_size": 10
+}

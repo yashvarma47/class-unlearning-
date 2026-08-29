@@ -1,0 +1,6 @@
+metric,n,mean,std,min,max,min_class,max_class
+anchor_ACC_r,10,93.8433,1.1460,92.5222,95.6222,frog,dog
+anchor_ACC_f,10,12.5500,11.5658,0.0000,42.1000,airplane,truck
+anchor_composite,10,82.0868,11.0003,53.7955,92.8556,truck,airplane
+anchor_MIA,10,92.5400,8.6171,69.6000,100.0000,truck,airplane
+selectivity_S,10,1053.8769,1413.4652,93.9864,4427.9137,truck,dog

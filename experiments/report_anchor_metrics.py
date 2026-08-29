@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -278,7 +279,18 @@ def main() -> int:
     rows["C_star"]["operators"] = member["operators"]
 
     if args.best_s:
-        best = max(front, key=lambda m: float(m["selectivity_S"]))
+        # S is nan for an identity edit -- it is a ratio of deltas against W_0,
+        # so a candidate that moved nothing gives 0/0. Every comparison against
+        # nan is False, so a plain max() returns whichever nan row it saw first
+        # and silently reports the UNEDITED model as "most selective". Three
+        # classes were written that way before this guard existed.
+        finite = [m for m in front
+                  if math.isfinite(float(m["selectivity_S"] or "nan"))]
+        if not finite:
+            print("  no front member has a finite S; skipping the best-S row")
+            finite = None
+        best = max(finite, key=lambda m: float(m["selectivity_S"])) if finite else None
+    if args.best_s and best is not None:
         best_position = int(best["front_position"])
         if best_position == args.front_position:
             print(f"  best-S member IS C* (front #{best_position}); not measured twice")

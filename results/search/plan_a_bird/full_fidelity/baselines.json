@@ -1,0 +1,24 @@
+{
+  "forget_class": 2,
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0013884639907628298,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.001073127775390943,
+    "forget_test_acc": 0.926,
+    "forget_test_loss": 0.2658334264755249,
+    "retain_test_acc": 0.9503333333333334,
+    "retain_test_loss": 0.19088662623034583
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 10.04154468688965,
+    "retain_train_acc": 0.9999777777777777,
+    "retain_train_loss": 0.0008563405666086409,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 10.220414916992187,
+    "retain_test_acc": 0.9525555555555556,
+    "retain_test_loss": 0.19506927018695408
+  },
+  "reference_checkpoint": "results/checkpoints/class2_bird_reference_best_dr.pt"
+}

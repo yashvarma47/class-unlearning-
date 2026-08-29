@@ -1,0 +1,24 @@
+{
+  "forget_class": 4,
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.001359312398545444,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0010763668421241972,
+    "forget_test_acc": 0.957,
+    "forget_test_loss": 0.1719566822052002,
+    "retain_test_acc": 0.9468888888888889,
+    "retain_test_loss": 0.20131737603081598
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 9.4418572265625,
+    "retain_train_acc": 0.9999777777777777,
+    "retain_train_loss": 0.001016138848910729,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 9.344656616210937,
+    "retain_test_acc": 0.9456666666666667,
+    "retain_test_loss": 0.2203334137333764
+  },
+  "reference_checkpoint": "results/checkpoints/class4_deer_reference_best_dr.pt"
+}

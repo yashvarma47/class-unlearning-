@@ -1,0 +1,24 @@
+{
+  "forget_class": 3,
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0012416925048455596,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0010894357237550948,
+    "forget_test_acc": 0.904,
+    "forget_test_loss": 0.3845863513946533,
+    "retain_test_acc": 0.9527777777777777,
+    "retain_test_loss": 0.17769186152352226
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 10.468983723449707,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0009197825740608904,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 10.425383178710938,
+    "retain_test_acc": 0.9612222222222222,
+    "retain_test_loss": 0.15297071788046096
+  },
+  "reference_checkpoint": "results/checkpoints/class3_cat_reference_best_dr.pt"
+}

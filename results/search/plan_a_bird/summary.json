@@ -1,0 +1,40 @@
+{
+  "name": "plan_a_bird",
+  "config": "search/plan_a_bird.yaml",
+  "generations": 50,
+  "population_size": 10,
+  "evaluated": 280,
+  "cache_hits": 230,
+  "failures": 0,
+  "elapsed_seconds": 498.6,
+  "runtime_per_individual": {
+    "n": 280,
+    "total": 498.37,
+    "mean": 1.78,
+    "min": 1.273,
+    "max": 3.071
+  },
+  "forget_class": 2,
+  "reference_checkpoint": "results/checkpoints/class2_bird_reference_best_dr.pt",
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.001705629052594304,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0008278033637907356,
+    "forget_test_acc": 0.926,
+    "forget_test_loss": 0.2658334264755249,
+    "retain_test_acc": 0.9503333333333334,
+    "retain_test_loss": 0.19088662623034583
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 10.25745964050293,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0006954549462534487,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 10.220414916992187,
+    "retain_test_acc": 0.9525555555555556,
+    "retain_test_loss": 0.19506927018695408
+  },
+  "front_size": 10
+}

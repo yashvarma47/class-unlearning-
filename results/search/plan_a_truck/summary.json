@@ -1,0 +1,40 @@
+{
+  "name": "plan_a_truck",
+  "config": "search/plan_a_truck.yaml",
+  "generations": 50,
+  "population_size": 10,
+  "evaluated": 257,
+  "cache_hits": 253,
+  "failures": 0,
+  "elapsed_seconds": 494.3,
+  "runtime_per_individual": {
+    "n": 257,
+    "total": 494.08,
+    "mean": 1.922,
+    "min": 1.367,
+    "max": 3.003
+  },
+  "forget_class": 9,
+  "reference_checkpoint": "results/checkpoints/class9_truck_reference_best_dr.pt",
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0007267112378031015,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0008451565518043935,
+    "forget_test_acc": 0.954,
+    "forget_test_loss": 0.1702044744491577,
+    "retain_test_acc": 0.9472222222222222,
+    "retain_test_loss": 0.20151206747690836
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 10.02757740020752,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0009921335149556398,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 10.176554321289062,
+    "retain_test_acc": 0.9514444444444444,
+    "retain_test_loss": 0.1996559649573432
+  },
+  "front_size": 10
+}

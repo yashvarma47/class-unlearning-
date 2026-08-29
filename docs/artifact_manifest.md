@@ -219,3 +219,55 @@ What is committed for each: the sha256, the split, the validation verdict and th
 per-class training summary and the Kaggle run manifest. Enough to recognise the right file, not
 enough to reconstruct it. The source zips (~83 MB each, ~750 MB total) are ignored via
 `reference_outputs_*.zip` and are the only copy of the weights outside `results/checkpoints/`.
+
+---
+
+## 8. The ten-class pure sweep -- complete 2026-08-30
+
+All ten CIFAR-10 classes have a completed **pure gradient-free** Plan A search, full-fidelity
+re-measurement, anchor metrics and Pareto figure. No refinement is included in any of it; the
+accepted BN-frozen refinements for frog and ship are hybrids and live in their own directories.
+
+| id | class | run directory | C* | operators |
+|---:|---|---|---:|---|
+| 0 | airplane | `results/search/plan_a_airplane` | #0 | `CLIP\|DAMP\|MASK` |
+| 1 | automobile | `results/search/plan_a_automobile` | #5 | `CLIP\|MASK\|PRUNE` |
+| 2 | bird | `results/search/plan_a_bird` | #0 | `CLIP\|MASK\|RANDOM_PRUNE` |
+| 3 | cat | `results/search/plan_a_cat` | #0 | `DAMP\|MASK\|PRUNE\|RANDOM_PRUNE\|RESET` |
+| 4 | deer | `results/search/plan_a_deer` | #2 | `MASK` |
+| 5 | dog | `results/search/plan_a_dog` | #3 | `MASK` |
+| 6 | frog | `results/search/plan_a_frog` | #8 | `DAMP\|MASK` |
+| 7 | horse | `results/search/plan_a_horse` | #7 | `MASK` |
+| 8 | ship | `results/search/plan_a_ship` | #6 | `MASK\|RESET` |
+| 9 | truck | `results/search/plan_a_truck` | #0 | `CLIP\|MASK\|QUANTIZE` |
+
+Each directory holds, all tracked: `pareto_front.csv`, `full_fidelity/front_full_fidelity.csv`,
+`full_fidelity/baselines.json`, `<class>_anchor_metrics.csv` and `.json`,
+`pareto_front_plan_a_<class>.png`, `pareto_front_plot_data.csv`, `summary.json`.
+`evaluation_history.csv` is ignored in every one -- ~90 KB per class of every evaluation
+including failures, useful for post-hoc analysis, too noisy to carry.
+
+Combined outputs: `results/literature_alignment/ten_class_pure_summary.csv`, `.md` and
+`ten_class_pure_mean_std.csv`, all built by `experiments/build_ten_class_summary.py` from the
+per-class artefacts. Nothing in them is recomputed, so re-measuring any class and re-running the
+builder keeps them consistent.
+
+### No new large artefacts
+
+The sweep produced **no checkpoints**. A search records genomes, not weights, so the ten run
+directories total well under a megabyte of tracked files plus ten ~270 KB figures. Git LFS still
+holds only the four frog-chain files; the storage decision in section 6 is unchanged and still
+pending.
+
+### One defect found and fixed during the sweep
+
+`--best-s` in `report_anchor_metrics.py`, and the same logic in `plot_pareto_front_class.py`,
+selected the highest-`S` front member with a plain `max()`. `S` is `nan` for an identity edit --
+it is a ratio of deltas against `W_0`, so a candidate that moved nothing gives 0/0 -- and every
+comparison against `nan` is `False`, so `max()` returned the first `nan` row and reported the
+**unedited model** as most selective. Three classes (deer, dog, horse) were written that way.
+
+Fixed with a finite-value guard in both scripts, and the three anchor stages plus three figures
+were re-run. Every `C_star` row reproduced identically, because the operators are deterministic
+and `C*` is selected on the composite, which is never `nan` -- so no headline number was ever
+affected, only the diagnostic `best_S` row. Audited afterwards: zero invalid rows remain.

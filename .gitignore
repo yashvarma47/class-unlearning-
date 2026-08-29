@@ -50,6 +50,33 @@ results/reference_training/staging/
 !results/search/plan_a_ship/**
 results/search/plan_a_ship/evaluation_history.csv
 
+# --- the remaining seven Plan A runs ---------------------------------------
+# Same treatment as frog, ship and airplane: summaries, fronts, figures and
+# reports tracked; evaluation_history.csv (every evaluation including
+# failures) left out.
+
+!results/search/plan_a_automobile/
+!results/search/plan_a_automobile/**
+results/search/plan_a_automobile/evaluation_history.csv
+!results/search/plan_a_bird/
+!results/search/plan_a_bird/**
+results/search/plan_a_bird/evaluation_history.csv
+!results/search/plan_a_cat/
+!results/search/plan_a_cat/**
+results/search/plan_a_cat/evaluation_history.csv
+!results/search/plan_a_deer/
+!results/search/plan_a_deer/**
+results/search/plan_a_deer/evaluation_history.csv
+!results/search/plan_a_dog/
+!results/search/plan_a_dog/**
+results/search/plan_a_dog/evaluation_history.csv
+!results/search/plan_a_horse/
+!results/search/plan_a_horse/**
+results/search/plan_a_horse/evaluation_history.csv
+!results/search/plan_a_truck/
+!results/search/plan_a_truck/**
+results/search/plan_a_truck/evaluation_history.csv
+
 # --- airplane (class 0) Plan A run -----------------------------------------
 # Same treatment as the frog and ship runs: small summaries, fronts, figure and
 # reports are tracked; evaluation_history.csv is every evaluation including

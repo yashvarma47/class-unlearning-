@@ -1,0 +1,24 @@
+{
+  "forget_class": 7,
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0009279102610424161,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0011243004146549436,
+    "forget_test_acc": 0.955,
+    "forget_test_loss": 0.13360820245742797,
+    "retain_test_acc": 0.9471111111111111,
+    "retain_test_loss": 0.20557831700642903
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 10.137729637145997,
+    "retain_train_acc": 0.9999555555555556,
+    "retain_train_loss": 0.0010640874184668064,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 9.995116943359376,
+    "retain_test_acc": 0.9423333333333334,
+    "retain_test_loss": 0.23824600293901232
+  },
+  "reference_checkpoint": "results/checkpoints/class7_horse_reference_best_dr.pt"
+}

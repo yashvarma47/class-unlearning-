@@ -1,0 +1,40 @@
+{
+  "name": "plan_a_automobile",
+  "config": "search/plan_a_automobile.yaml",
+  "generations": 50,
+  "population_size": 10,
+  "evaluated": 301,
+  "cache_hits": 209,
+  "failures": 0,
+  "elapsed_seconds": 714.0,
+  "runtime_per_individual": {
+    "n": 301,
+    "total": 713.72,
+    "mean": 2.371,
+    "min": 1.402,
+    "max": 5.278
+  },
+  "forget_class": 1,
+  "reference_checkpoint": "results/checkpoints/class1_automobile_reference_best_dr.pt",
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0007363065960817039,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0012334492057561874,
+    "forget_test_acc": 0.978,
+    "forget_test_loss": 0.08752861154079437,
+    "retain_test_acc": 0.9445555555555556,
+    "retain_test_loss": 0.2106982723871867
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 11.427000045776367,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0005950768245384097,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 11.518738647460937,
+    "retain_test_acc": 0.9475555555555556,
+    "retain_test_loss": 0.21133465894063314
+  },
+  "front_size": 10
+}
