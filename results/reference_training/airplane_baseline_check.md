@@ -1,6 +1,6 @@
 # Baseline wiring check — class 0 (airplane)
 
-Produced by `experiments/check_class_baselines.py` from `search/plan_a_airplane_smoke.yaml` at 2026-08-29T16:22:46+00:00.
+Produced by `experiments/check_class_baselines.py` from `search/plan_a_airplane.yaml` at 2026-08-29T17:04:54+00:00.
 
 **Result: PASS**
 

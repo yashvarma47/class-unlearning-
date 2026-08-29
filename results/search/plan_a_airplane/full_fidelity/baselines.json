@@ -1,0 +1,24 @@
+{
+  "forget_class": 0,
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.000983500912040472,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.001118123671743605,
+    "forget_test_acc": 0.958,
+    "forget_test_loss": 0.14749303197860716,
+    "retain_test_acc": 0.9467777777777778,
+    "retain_test_loss": 0.20403556050194635
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 9.813567208862304,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0009049953815837701,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 9.966290283203126,
+    "retain_test_acc": 0.9515555555555556,
+    "retain_test_loss": 0.19733893044789633
+  },
+  "reference_checkpoint": "results/checkpoints/class0_airplane_reference_best_dr.pt"
+}

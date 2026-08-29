@@ -1,0 +1,40 @@
+{
+  "name": "plan_a_airplane",
+  "config": "search/plan_a_airplane.yaml",
+  "generations": 50,
+  "population_size": 10,
+  "evaluated": 233,
+  "cache_hits": 277,
+  "failures": 0,
+  "elapsed_seconds": 931.8,
+  "runtime_per_individual": {
+    "n": 233,
+    "total": 931.45,
+    "mean": 3.998,
+    "min": 1.56,
+    "max": 12.871
+  },
+  "forget_class": 0,
+  "reference_checkpoint": "results/checkpoints/class0_airplane_reference_best_dr.pt",
+  "original": {
+    "forget_train_acc": 1.0,
+    "forget_train_loss": 0.0004802104376722127,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0017847255803644657,
+    "forget_test_acc": 0.958,
+    "forget_test_loss": 0.14749303197860716,
+    "retain_test_acc": 0.9467777777777778,
+    "retain_test_loss": 0.20403556050194635
+  },
+  "reference": {
+    "forget_train_acc": 0.0,
+    "forget_train_loss": 9.962114334106445,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.0028674997156485915,
+    "forget_test_acc": 0.0,
+    "forget_test_loss": 9.966290283203126,
+    "retain_test_acc": 0.9515555555555556,
+    "retain_test_loss": 0.19733893044789633
+  },
+  "front_size": 10
+}

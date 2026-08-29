@@ -50,6 +50,14 @@ results/reference_training/staging/
 !results/search/plan_a_ship/**
 results/search/plan_a_ship/evaluation_history.csv
 
+# --- airplane (class 0) Plan A run -----------------------------------------
+# Same treatment as the frog and ship runs: small summaries, fronts, figure and
+# reports are tracked; evaluation_history.csv is every evaluation including
+# failures, too noisy to carry.
+!results/search/plan_a_airplane/
+!results/search/plan_a_airplane/**
+results/search/plan_a_airplane/evaluation_history.csv
+
 # --- ship BN-frozen refinement --------------------------------------------
 # The refinement record and report are the result and belong in git. The
 # refined checkpoint itself does NOT: it is 43 MB, LFS is not approved for
