@@ -50,6 +50,15 @@ results/reference_training/staging/
 !results/search/plan_a_ship/**
 results/search/plan_a_ship/evaluation_history.csv
 
+# --- ship BN-frozen refinement --------------------------------------------
+# The refinement record and report are the result and belong in git. The
+# refined checkpoint itself does NOT: it is 43 MB, LFS is not approved for
+# anything beyond the frog chain, and the JSON records the sha and every metric
+# needed to recognise it.
+!results/search/plan_a_ship_bn_frozen_refined/
+!results/search/plan_a_ship_bn_frozen_refined/**
+results/search/plan_a_ship_bn_frozen_refined/*.pt
+
 # --- checkpoints that ARE part of the published result ---------------------
 # Stored through Git LFS (see .gitattributes). These four are the whole
 # reproducible chain: the model unlearned FROM, the reference f1 is measured

@@ -1,0 +1,44 @@
+{
+  "assignment_file": "classes_pragati_dog.yaml",
+  "assigned_person": "Pragati",
+  "requested_classes": [
+    {
+      "id": 5,
+      "name": "dog"
+    }
+  ],
+  "trained_classes": [
+    {
+      "id": 5,
+      "name": "dog",
+      "epochs": 200,
+      "hours": 2.254
+    }
+  ],
+  "seed": 42,
+  "epochs": 200,
+  "selection_rule": "best checkpoint selected by D_r_test accuracy, with D_r_test loss as tie-breaker (D_f_test is logged every epoch but NEVER influences selection)",
+  "expected_split_sizes": {
+    "D_f_train": 5000,
+    "D_r_train": 45000,
+    "D_f_test": 1000,
+    "D_r_test": 9000
+  },
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Linux-6.12.90+-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "torch": "2.10.0+cu128",
+    "torchvision": "0.25.0+cu128",
+    "cuda_compiled_version": "12.8",
+    "cudnn_version": 91002,
+    "device": {
+      "device": "cuda:0",
+      "cuda_available": true,
+      "gpu_name": "Tesla T4",
+      "total_memory_gb": 14.56,
+      "compute_capability": "7.5"
+    }
+  },
+  "dry_run": false
+}

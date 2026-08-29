@@ -1,0 +1,15 @@
+# Smoke test of the Plan A AIRPLANE search: population 4, one generation.
+#
+# Mechanical, not scientific. Its job is to prove that a reference imported from
+# a teammate's Kaggle zip drives the evaluator correctly: right class, right
+# split, right W_ref, no nan, output files in the expected shape. Eight
+# evaluations say nothing about selectivity.
+
+_base_:
+  - search/plan_a_airplane.yaml
+
+search:
+  name: plan_a_airplane_smoke
+  population_size: 4
+  generations: 1
+  results_dir: results/search/plan_a_airplane_smoke

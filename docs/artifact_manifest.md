@@ -174,3 +174,48 @@ Until that is decided, the ship `.pt`, its sidecar, its log and its environment 
 git-ignored, and `reference_outputs_trial_ship.zip` is not committed either. What *is* committed is
 everything needed to recognise the right file if it turns up again: the sha256, the split, the
 validation verdict and the training log summary.
+
+---
+
+## 7. The other eight references — imported 2026-08-28/29, all external
+
+All ten CIFAR-10 classes now have a validated retain-only reference. Eight arrived from Kaggle
+in seven zips (Aditya's carried two classes), were validated by
+`kaggle/reference_training/validate_reference_zip.py` and installed by
+`import_reference_zip.py`. Frog was trained locally and never packaged, so it was validated in
+place against the same thresholds and recorded with `source_zip = "(local training, never
+packaged)"`.
+
+| id | class | `D_f_test` | `D_r_test` | epoch | sha256 | source zip |
+|---:|---|---:|---:|---:|---|---|
+| 0 | airplane | 0.0000 | 0.9516 | 135 | `283da38e314e` | `reference_outputs_yash_airplane.zip` |
+| 1 | automobile | 0.0000 | 0.9476 | 191 | `5d07d03e6655` | `reference_outputs_yash_automobile.zip` |
+| 2 | bird | 0.0000 | 0.9526 | 159 | `3750f7f565c1` | `reference_outputs_yash_bird.zip` |
+| 3 | cat | 0.0000 | 0.9612 | 195 | `60ba8b8bf71a` | `reference_outputs_pragati_cat.zip` |
+| 4 | deer | 0.0000 | 0.9457 | 189 | `cca3b78022c8` | `reference_outputs_pragati_deer.zip` |
+| 5 | dog | 0.0000 | 0.9576 | 151 | `f2bb585dbc49` | `reference_outputs_pragati_dog.zip` |
+| 6 | frog | 0.0000 | 0.9459 | 163 | `c44f3f99e8a3` | (local, never packaged) |
+| 7 | horse | 0.0000 | 0.9423 | 162 | `478d67d102fe` | `reference_outputs_aditya.zip` |
+| 8 | ship | 0.0000 | 0.9502 | 181 | `852fc08e8cb0` | `reference_outputs_trial_ship.zip` |
+| 9 | truck | 0.0000 | 0.9514 | 174 | `52c6e8d7c132` | `reference_outputs_aditya.zip` |
+
+Every one is 200 log epochs, seed 42, split 5000 / 45000 / 1000 / 9000, and every split inside
+every zip was byte-compared against the version-controlled local split before import.
+
+### Storage: unchanged, and now the pressure is real
+
+**All nine non-frog references are external and git-ignored, and so is frog's.** Only `W_0`,
+frog's `W_ref`, frog's `C*` and frog's refined checkpoint are in Git LFS — 256 MiB of the free
+1 GiB allowance. Adding the nine new references at ~85 MiB each would be **~765 MiB more**,
+taking the repository past the free tier on its own.
+
+The three options from section 5 stand, and option 2 is now clearly the right one to cost out:
+these nine files are 85 MiB because they carry optimiser and scheduler state, and a weights-only
+re-save would put all ten references at ~430 MiB total. Unlike `W_0` and frog's `W_ref`, nothing
+has been measured against a specific byte layout of the eight new files, so re-saving them is
+safe. **Still pending explicit approval — nothing has been added to LFS.**
+
+What is committed for each: the sha256, the split, the validation verdict and thresholds, the
+per-class training summary and the Kaggle run manifest. Enough to recognise the right file, not
+enough to reconstruct it. The source zips (~83 MB each, ~750 MB total) are ignored via
+`reference_outputs_*.zip` and are the only copy of the weights outside `results/checkpoints/`.

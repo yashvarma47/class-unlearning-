@@ -1,0 +1,33 @@
+{
+  "model_name": "resnet18",
+  "dataset": "cifar10",
+  "seed": 42,
+  "epoch": 0,
+  "metrics": {
+    "forget_train_acc": 0.059,
+    "forget_train_loss": 5.239386746978759,
+    "retain_train_acc": 0.9996888888888888,
+    "retain_train_loss": 0.002990960677133666,
+    "forget_test_acc": 0.047,
+    "forget_test_loss": 5.76138232421875,
+    "retain_test_acc": 0.9448888888888889,
+    "retain_test_loss": 0.20707519054412843,
+    "selectivity_S": 2832.9040907761523,
+    "edit_cost": 0.1128027971810787,
+    "parameter_movement": 0.0004087742059424814,
+    "buffer_movement": 0.0,
+    "batchnorm_counters_changed": 0.0,
+    "full_test_acc": 0.8551,
+    "mia_auc": 0.540831,
+    "gap_forget_train_acc": 0.059,
+    "gap_forget_test_acc": 0.047,
+    "gap_retain_train_acc": -0.00031111111111115086,
+    "gap_retain_test_acc": -0.005333333333333301
+  },
+  "split_file": "results/splits/cifar10_class8_ship.json",
+  "training_config": null,
+  "notes": "REFINEMENT: one clipped forget ascent step on D_f then one retain repair step on D_r, applied to C* OUTSIDE the evolutionary search. front_position=6 chromosome=1 0 0 1 1 0 1 0 1 2 0 2 4 3 3 0 0 3 0 2 0 0 1 0 2 2 2 0 0 2",
+  "created_at": "2026-08-29T16:19:57+00:00",
+  "torch_version": "2.5.1+cu121",
+  "format_version": 1
+}

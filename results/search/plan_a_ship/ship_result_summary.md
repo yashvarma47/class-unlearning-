@@ -1,8 +1,10 @@
 # Ship (class 8) Plan A — pure gradient-free result, and what it says about frog
 
 Run 2026-08-27 on a GTX 1650. Search 7.8 min, full-fidelity re-measurement 10.6 min, anchor
-metrics ~11 min. **No refinement was run.** Every ship number below is *pure* gradient-free
-weight surgery: no gradient step was ever applied.
+metrics ~11 min. Every ship number in sections 1-5 is *pure* gradient-free
+weight surgery: no gradient step was ever applied. A BN-frozen refinement was run later, on
+2026-08-29 and is reported separately in section 6 as a HYBRID; it changes nothing in
+sections 1-5.
 
 ---
 
@@ -105,9 +107,9 @@ identical recipe — worth one line in the methods chapter.
 `C*_refined_bn_frozen` (frog: `ACC_r` 92.56, `ACC_f` **2.70**, composite 90.06, MIA 96.30) is a
 **hybrid**, not a pure result: `DAMP|MASK` followed by two gradient steps with BatchNorm frozen,
 applied *outside* the evolutionary search. It is the best forgetting the project has produced,
-and it is not comparable with either pure `C*` on the "gradient-free" claim. **No ship
-refinement has been run.** If one is approved, the honest comparison is refined-frog against
-refined-ship, and pure against pure.
+and it is not comparable with either pure `C*` on the "gradient-free" claim. The ship refinement has since been run and
+accepted -- see section 6. The honest comparison is refined-frog against refined-ship, and
+pure against pure.
 
 ---
 
@@ -184,3 +186,25 @@ from 8.30 to 2.70 for 0.03 points of `ACC_r` — the single largest improvement 
 Ship's `ACC_f` of 14.00 is the weakest number in the ship result and the one the anchor
 comparison turns on. The BatchNorm-frozen procedure already exists and is already corrected.
 It needs explicit approval, and the result must be labelled **hybrid**, not gradient-free.
+
+---
+
+## 6. Addendum, 2026-08-29 -- BN-frozen refinement was run and ACCEPTED
+
+Section 5 recommended it; it has now been run. **The pure result above is unchanged** -- nothing
+in sections 1-5 was rewritten. The refinement is a separate, clearly labelled **hybrid**.
+
+| | pure `C*_ship` | refined (hybrid) |
+|---|---:|---:|
+| `ACC_r` (%) | 94.58 | 94.49 |
+| `ACC_f` (%) | 14.00 | **4.70** |
+| composite (%) | 81.34 | **90.05** |
+| anchor MIA (%) | 97.00 | **99.10** |
+| `S` | 2436.50 | 2832.90 |
+| BatchNorm buffer movement | -- | 0.000000 (verified) |
+
+Full detail, acceptance conditions and the frog comparison:
+`results/search/plan_a_ship_bn_frozen_refined/refinement_summary.md`.
+
+The `pure` column remains the gradient-free claim. The anchor's own method is gradient-free, so
+only that column is a like-for-like comparison with their Table 1.
