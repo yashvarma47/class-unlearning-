@@ -1,6 +1,6 @@
 # Table: retain-only reference models (`W_ref`), all ten classes
 
-Generated 2026-08-30T20:45:08+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 Each `W_ref` is a ResNet-18 trained from scratch on `D_r_train` only -- the 45,000
 CIFAR-10 training images that are not the forget class. It never saw a single image

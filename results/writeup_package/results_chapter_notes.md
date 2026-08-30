@@ -1,6 +1,6 @@
 # Results chapter -- working notes
 
-Generated 2026-08-30T20:45:08+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 Bullet points to write from, not prose to paste. Every number traces to a table in
 this package.

@@ -1,0 +1,41 @@
+model,model_label,predicted_class_id,predicted_class_name,count,percent,is_forget_class
+W_0,original model,0,airplane,7,0.70,False
+W_0,original model,1,automobile,28,2.80,False
+W_0,original model,2,bird,1,0.10,False
+W_0,original model,3,cat,3,0.30,False
+W_0,original model,4,deer,0,0.00,False
+W_0,original model,5,dog,0,0.00,False
+W_0,original model,6,frog,0,0.00,False
+W_0,original model,7,horse,0,0.00,False
+W_0,original model,8,ship,7,0.70,False
+W_0,original model,9,truck,954,95.40,True
+W_ref,retain-only reference (gold standard),0,airplane,135,13.50,False
+W_ref,retain-only reference (gold standard),1,automobile,684,68.40,False
+W_ref,retain-only reference (gold standard),2,bird,3,0.30,False
+W_ref,retain-only reference (gold standard),3,cat,18,1.80,False
+W_ref,retain-only reference (gold standard),4,deer,3,0.30,False
+W_ref,retain-only reference (gold standard),5,dog,4,0.40,False
+W_ref,retain-only reference (gold standard),6,frog,4,0.40,False
+W_ref,retain-only reference (gold standard),7,horse,6,0.60,False
+W_ref,retain-only reference (gold standard),8,ship,143,14.30,False
+W_ref,retain-only reference (gold standard),9,truck,0,0.00,True
+C_star_pure,pure gradient-free C*,0,airplane,156,15.60,False
+C_star_pure,pure gradient-free C*,1,automobile,167,16.70,False
+C_star_pure,pure gradient-free C*,2,bird,31,3.10,False
+C_star_pure,pure gradient-free C*,3,cat,86,8.60,False
+C_star_pure,pure gradient-free C*,4,deer,7,0.70,False
+C_star_pure,pure gradient-free C*,5,dog,4,0.40,False
+C_star_pure,pure gradient-free C*,6,frog,32,3.20,False
+C_star_pure,pure gradient-free C*,7,horse,30,3.00,False
+C_star_pure,pure gradient-free C*,8,ship,66,6.60,False
+C_star_pure,pure gradient-free C*,9,truck,421,42.10,True
+C_star_hybrid,C* + BN-frozen refinement (hybrid),0,airplane,203,20.30,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),1,automobile,204,20.40,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),2,bird,33,3.30,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),3,cat,92,9.20,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),4,deer,6,0.60,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),5,dog,4,0.40,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),6,frog,37,3.70,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),7,horse,38,3.80,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),8,ship,74,7.40,False
+C_star_hybrid,C* + BN-frozen refinement (hybrid),9,truck,309,30.90,True

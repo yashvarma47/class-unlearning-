@@ -1,6 +1,6 @@
 # Table: hybrid MED-US (pure `C*` + BN-frozen refinement), all ten classes
 
-Generated 2026-08-30T20:45:08+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 **This is not the pure method.** Each refined row is the pure `C*` followed by one
 clipped gradient-ascent step on `D_f` and one repair step on `D_r`, applied outside
