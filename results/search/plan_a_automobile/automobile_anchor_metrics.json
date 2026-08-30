@@ -121,6 +121,33 @@
    "kind": "PURE GRADIENT-FREE (Pareto front member #7, highest selectivity)",
    "operators": "MASK",
    "selectivity_S": 1639.8010747501703
+  },
+  "C_star_refined_bn_frozen": {
+   "anchor_ACC_r": 92.60000000000001,
+   "anchor_ACC_f": 5.5,
+   "anchor_composite": 87.507,
+   "anchor_MIA": 95.8,
+   "n_shadow_member": 45000,
+   "n_shadow_nonmember": 5000,
+   "n_target_nonmember": 1000,
+   "subsampled": false,
+   "seed": null,
+   "f1_js": 0.35636024808883665,
+   "f2_retain_train_loss": 0.02935824619597859,
+   "f3_edit_cost": 0.12103623801453735,
+   "kl_to_reference": 2.0207173738479614,
+   "forget_train_acc": 0.0438,
+   "forget_train_loss": 5.036352291107177,
+   "forget_test_acc": 0.055,
+   "forget_test_loss": 5.219423889160156,
+   "retain_train_acc": 0.9913555555555555,
+   "retain_train_loss": 0.02935824619597859,
+   "retain_test_acc": 0.926,
+   "retain_test_loss": 0.2734763808780246,
+   "mia_auc": 0.5173826,
+   "selectivity_S": 178.4213002756128,
+   "kind": "POST-SEARCH REFINEMENT -- HYBRID, not pure gradient-free; not a Pareto-front member",
+   "operators": "pure C* + 1 forget step + 1 retain repair (BN frozen)"
   }
  }
 }

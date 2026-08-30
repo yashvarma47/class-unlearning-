@@ -1,0 +1,33 @@
+{
+  "model_name": "resnet18",
+  "dataset": "cifar10",
+  "seed": 42,
+  "epoch": 0,
+  "metrics": {
+    "forget_train_acc": 0.0252,
+    "forget_train_loss": 6.597245001220704,
+    "retain_train_acc": 1.0,
+    "retain_train_loss": 0.00237655942009555,
+    "forget_test_acc": 0.019,
+    "forget_test_loss": 7.537350219726562,
+    "retain_test_acc": 0.9556666666666667,
+    "retain_test_loss": 0.15531936550140382,
+    "selectivity_S": 4950.8140597618085,
+    "edit_cost": 0.11256864991192107,
+    "parameter_movement": 0.0003573587930271963,
+    "buffer_movement": 0.0,
+    "batchnorm_counters_changed": 0.0,
+    "full_test_acc": 0.862,
+    "mia_auc": 0.599109,
+    "gap_forget_train_acc": 0.0252,
+    "gap_forget_test_acc": 0.019,
+    "gap_retain_train_acc": 0.0,
+    "gap_retain_test_acc": -0.00188888888888894
+  },
+  "split_file": "results/splits/cifar10_class5_dog.json",
+  "training_config": null,
+  "notes": "REFINEMENT: one clipped forget ascent step on D_f then one retain repair step on D_r, applied to C* OUTSIDE the evolutionary search. front_position=3 chromosome=0 0 0 0 1 0 0 0 0 0 0 1 2 3 0 1 1 3 1 1 0 0 1 0 1 0 1 0 0 1",
+  "created_at": "2026-08-30T00:02:22+00:00",
+  "torch_version": "2.5.1+cu121",
+  "format_version": 1
+}

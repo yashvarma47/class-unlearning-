@@ -271,3 +271,51 @@ Fixed with a finite-value guard in both scripts, and the three anchor stages plu
 were re-run. Every `C_star` row reproduced identically, because the operators are deterministic
 and `C*` is selected on the composite, which is never `nan` -- so no headline number was ever
 affected, only the diagnostic `best_S` row. Audited afterwards: zero invalid rows remain.
+
+---
+
+## 9. The hybrid variant -- BN-frozen refinement, all eligible classes, 2026-08-30
+
+Nine classes now have an accepted post-search **hybrid** result: the pure `C*` plus one clipped
+gradient-ascent step on `D_f` and one repair step on `D_r`, BatchNorm frozen, applied outside the
+evolutionary search. Airplane is a deliberate no-op -- its pure `ACC_f` is already 0.00 with
+anchor MIA 100.00, so a forgetting step has nothing to improve.
+
+**Nine attempts, nine accepted, zero rejected.** Every one held BatchNorm buffer movement at
+exactly `0.000000` with zero counter changes, and parameter movement between 0.000303 and
+0.000420 against a budget of 0.04.
+
+| directory | contents |
+|---|---|
+| `results/search/plan_a_<class>_bn_frozen_refined/` | `refinement.json`, `refined_best.json`, `refinement_summary.md` (frog and ship) -- all tracked |
+| same | `refined_best.pt`, 43 MB -- **ignored**, LFS is still approved only for the frog chain |
+
+Combined outputs, all under `results/literature_alignment/`: `ten_class_hybrid_summary.csv` and
+`.md`, `ten_class_hybrid_mean_std.csv`, `pure_vs_hybrid_comparison.csv` and `.md`, built by
+`experiments/build_hybrid_summary.py`.
+
+### Pure and hybrid are reported separately, permanently
+
+They are different methods. The anchor paper's method is gradient-free, so **only the pure table
+is a like-for-like comparison with it**. Merging the two would overstate what MED-US alone
+achieves, and the hybrid's gain is real enough that the temptation is worth naming:
+
+| metric | pure | hybrid | change |
+|---|---|---|---|
+| `ACC_r` (%) | 93.84 +/- 1.15 | 93.72 +/- 1.12 | -0.12 |
+| `ACC_f` (%) | 12.55 +/- 11.57 | **7.55 +/- 8.87** | **-5.00** |
+| composite (%) | 82.09 +/- 11.00 | **86.66 +/- 8.52** | **+4.58** |
+| anchor MIA (%) | 92.54 +/- 8.62 | **95.05 +/- 6.08** | **+2.51** |
+
+### How the refined rows were measured
+
+`experiments/measure_refined_anchor.py` measures **only** the refined model and merges its row
+into the class's existing anchor CSV. Re-running the full `report_anchor_metrics.py` would have
+recomputed `W_0`, `W_ref`, `C*` and the best-S row -- already reported, already committed -- and
+a re-measurement that came back even slightly different would have silently changed a published
+number.
+
+The existing rows are therefore copied as **raw CSV text**, never parsed and re-serialised, and
+after writing the file is re-read and every preserved line compared **byte for byte**. A mismatch
+restores a backup and exits non-zero. All nine merges verified clean, and the JSON sidecars were
+diffed the same way.

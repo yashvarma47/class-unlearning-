@@ -121,6 +121,33 @@
    "kind": "PURE GRADIENT-FREE (Pareto front member #2, highest selectivity)",
    "operators": "DAMP|MASK",
    "selectivity_S": 319.09295709468455
+  },
+  "C_star_refined_bn_frozen": {
+   "anchor_ACC_r": 92.93333333333334,
+   "anchor_ACC_f": 7.000000000000001,
+   "anchor_composite": 86.428,
+   "anchor_MIA": 92.80000000000001,
+   "n_shadow_member": 45000,
+   "n_shadow_nonmember": 5000,
+   "n_target_nonmember": 1000,
+   "subsampled": false,
+   "seed": null,
+   "f1_js": 0.48985749464035033,
+   "f2_retain_train_loss": 0.03510534821616279,
+   "f3_edit_cost": 0.12202356958051364,
+   "kl_to_reference": 4.09748063583374,
+   "forget_train_acc": 0.0518,
+   "forget_train_loss": 6.314113900756836,
+   "forget_test_acc": 0.07,
+   "forget_test_loss": 6.801842468261719,
+   "retain_train_acc": 0.9902222222222222,
+   "retain_train_loss": 0.03510534821616279,
+   "retain_test_acc": 0.9293333333333333,
+   "retain_test_loss": 0.295140079498291,
+   "mia_auc": 0.5513534,
+   "selectivity_S": 185.78550100552397,
+   "kind": "POST-SEARCH REFINEMENT -- HYBRID, not pure gradient-free; not a Pareto-front member",
+   "operators": "pure C* + 1 forget step + 1 retain repair (BN frozen)"
   }
  }
 }

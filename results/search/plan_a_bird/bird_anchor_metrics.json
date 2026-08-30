@@ -94,6 +94,33 @@
    "kind": "PURE GRADIENT-FREE (Pareto front member)",
    "operators": "CLIP|MASK|RANDOM_PRUNE",
    "selectivity_S": 1320.4042219280248
+  },
+  "C_star_refined_bn_frozen": {
+   "anchor_ACC_r": 94.89999999999999,
+   "anchor_ACC_f": 12.5,
+   "anchor_composite": 83.0375,
+   "anchor_MIA": 93.7,
+   "n_shadow_member": 45000,
+   "n_shadow_nonmember": 5000,
+   "n_target_nonmember": 1000,
+   "subsampled": false,
+   "seed": null,
+   "f1_js": 0.27526498020887374,
+   "f2_retain_train_loss": 0.0049027612961000866,
+   "f3_edit_cost": 0.1819401439017734,
+   "kl_to_reference": 1.640673614692688,
+   "forget_train_acc": 0.1316,
+   "forget_train_loss": 5.000787223052979,
+   "forget_test_acc": 0.125,
+   "forget_test_loss": 6.017086547851562,
+   "retain_train_acc": 0.9993777777777778,
+   "retain_train_loss": 0.0049027612961000866,
+   "retain_test_acc": 0.949,
+   "retain_test_loss": 0.18845801629622777,
+   "mia_auc": 0.5823658,
+   "selectivity_S": 1305.4509607844836,
+   "kind": "POST-SEARCH REFINEMENT -- HYBRID, not pure gradient-free; not a Pareto-front member",
+   "operators": "pure C* + 1 forget step + 1 retain repair (BN frozen)"
   }
  }
 }

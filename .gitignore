@@ -85,6 +85,34 @@ results/search/plan_a_truck/evaluation_history.csv
 !results/search/plan_a_airplane/**
 results/search/plan_a_airplane/evaluation_history.csv
 
+# --- BN-frozen refinements, the remaining classes --------------------------
+# Same treatment as ship's: the refinement record and report are the result
+# and belong in git; the refined checkpoint does not -- 43 MB each, and LFS
+# is still approved only for the frog chain. The JSON records every metric
+# needed to recognise the model.
+
+!results/search/plan_a_automobile_bn_frozen_refined/
+!results/search/plan_a_automobile_bn_frozen_refined/**
+results/search/plan_a_automobile_bn_frozen_refined/*.pt
+!results/search/plan_a_bird_bn_frozen_refined/
+!results/search/plan_a_bird_bn_frozen_refined/**
+results/search/plan_a_bird_bn_frozen_refined/*.pt
+!results/search/plan_a_cat_bn_frozen_refined/
+!results/search/plan_a_cat_bn_frozen_refined/**
+results/search/plan_a_cat_bn_frozen_refined/*.pt
+!results/search/plan_a_deer_bn_frozen_refined/
+!results/search/plan_a_deer_bn_frozen_refined/**
+results/search/plan_a_deer_bn_frozen_refined/*.pt
+!results/search/plan_a_dog_bn_frozen_refined/
+!results/search/plan_a_dog_bn_frozen_refined/**
+results/search/plan_a_dog_bn_frozen_refined/*.pt
+!results/search/plan_a_horse_bn_frozen_refined/
+!results/search/plan_a_horse_bn_frozen_refined/**
+results/search/plan_a_horse_bn_frozen_refined/*.pt
+!results/search/plan_a_truck_bn_frozen_refined/
+!results/search/plan_a_truck_bn_frozen_refined/**
+results/search/plan_a_truck_bn_frozen_refined/*.pt
+
 # --- ship BN-frozen refinement --------------------------------------------
 # The refinement record and report are the result and belong in git. The
 # refined checkpoint itself does NOT: it is 43 MB, LFS is not approved for
