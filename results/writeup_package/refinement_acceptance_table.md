@@ -1,6 +1,6 @@
 # Table: BN-frozen refinement acceptance record
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 **Nine attempts, nine accepted, zero rejected.** Airplane was not attempted: its pure
 `ACC_f` is already 0.00 with anchor MIA 100.00, so there was nothing for a forgetting

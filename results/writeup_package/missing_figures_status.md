@@ -1,11 +1,11 @@
 # Figure status -- what was generated, what was not, and why
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 ## Generated
 
 All six requested figures were produced, into `results/writeup_package/figures/`.
-**6 of 6 present** (verified on disk).
+**7 of 7 present** (verified on disk).
 
 | figure | source | new computation? |
 |---|---|---|
@@ -88,12 +88,57 @@ it. Regenerating frog's data under the newer name would produce a second file wi
 different columns describing the same front, so it was not done. **All ten classes have
 their plotted values on disk.**
 
-## Not generated, and why
+## Generated: `class_structure_analysis.png`, and it returned a null result
 
-**Class-structure figures.** The data is committed in
-`results/analysis/class_structure/` and needs no new experiment, but plotting it was
-outside this task's scope. This is the natural first figure of the results chapter and
-is the cheapest remaining figure work -- it costs nothing but the plotting.
+Built from `results/analysis/class_structure/summary.json` and
+`channel_contrast_all_classes.csv` -- both committed. No new experiment; the only
+computation is arithmetic over those files. It also writes
+`class_structure_similarity.csv`, the 10x10 matrix behind panel C.
+
+**Panel A -- structure exists, in every class.** Between 84.1% (horse) and 91.2% (ship)
+of channels stand above the noise floor, against **0.55%** for the predecessor project's
+instance-level forget set, where the null control gives 1.00% by construction. Three
+orders of magnitude. This is the project's founding result and it holds for all ten.
+
+**Panel B -- structure does NOT predict difficulty, and this is the important finding.**
+Median SNR against pure `ACC_f` is a null scatter: **Pearson r = -0.04 over ten points**.
+Truck is sixth of ten on median SNR and fifth on channels above the floor, yet its
+`ACC_f` of 42.10 is more than double the next worst. Automobile has the **least**
+structure of any class and forgets 3.3x better than truck.
+
+This matters for the write-up. `limitations_future_work_notes.md` proposed regressing
+per-class `ACC_f` on the activation-contrast statistic and called it "the strongest
+contribution available". **That regression has now been run and it is null.** The
+proposal should be corrected rather than left standing as future work, and the null
+reported: a reader will otherwise assume the obvious explanation, which the data does
+not support.
+
+**Panel C -- the similarity matrix, which does support the truck reading.** Cosine
+similarity between the per-class channel-contrast vectors recovers the semantic
+grouping without being told it: vehicles with vehicles (airplane-ship 0.41,
+truck-automobile 0.32, ship-truck 0.29), animals with animals (cat-dog 0.30,
+deer-frog 0.30, bird-deer 0.29). That it reproduces a structure nobody encoded is the
+evidence the measurement means something.
+
+**Truck's nearest neighbour is automobile (0.32), and the relation is mutual** --
+automobile's nearest is truck. That matches `truck_failure_analysis.png` exactly, where
+a model that never saw a truck sends 68.4% of them to automobile. Two independent
+measurements, one on activations of `W_0` and one on predictions of four unlearned
+models, point at the same pair.
+
+### What this figure must NOT be captioned as showing
+
+That similarity predicts difficulty. **It does not**: Pearson r = -0.08 between each
+class's maximum similarity to any other class and its `ACC_f`. Airplane is the
+counterexample and it is decisive -- it has the highest similarity to another class of
+any of the ten (0.41, with ship) and still reaches `ACC_f` 0.00.
+
+The defensible claim is narrower and still worth making: truck's difficulty **coincides
+with** its structure being most shared with a class that stays, and two independent
+measurements agree on which class that is. Whether that sharing is the *cause* is not
+established by these artefacts.
+
+## Not generated, and why
 
 **Seed-variance, ablation, baseline and runtime figures.** These cannot be built from
 existing artefacts, because the underlying experiments have not been run. Building them

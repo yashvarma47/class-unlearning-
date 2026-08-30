@@ -1,6 +1,6 @@
 # Results chapter -- working notes
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 Bullet points to write from, not prose to paste. Every number traces to a table in
 this package.
@@ -89,12 +89,16 @@ this package.
 - The ordering is not random noise across a uniform method -- it is stable, wide, and
   the same classes stay weak after refinement. Truck is worst pure and worst hybrid;
   airplane is best pure and best hybrid.
-- The natural reading: how much forget-specific structure a class has determines how
-  well weight editing can remove it. The class-structure measurement in
-  `results/analysis/class_structure/` is the instrument for testing that, and the
-  regression against per-class `ACC_f` has not been run.
-- State it as an observation supported by ordering, not as a demonstrated
-  correlation, until that regression exists.
+- The natural reading -- that how much forget-specific structure a class has determines
+  how well weight editing can remove it -- **has now been tested against the committed
+  class-structure measurement, and it is false.** Pearson r between median SNR and
+  `ACC_f` is -0.04 over the ten classes. See `class_structure_analysis.png`, panel B.
+- Report the null. It is a better result than the correlation would have been, because
+  it says the structure measurement answers a *regime* question (class-level forget
+  sets have structure, instance-level ones do not) and not a *ranking* one, and it
+  stops a reader assuming the obvious explanation.
+- What survives: the ordering is stable and wide, and it is not explained by structure
+  magnitude. Why it varies remains open.
 
 ## Truck as the weakest class
 

@@ -1,6 +1,6 @@
 # Table: pure against hybrid MED-US
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 **These are two different methods and this table compares them; it does not merge
 them.** The anchor paper's method is gradient-free, so only the pure table is a

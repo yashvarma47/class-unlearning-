@@ -1,6 +1,6 @@
 # Table: benchmark comparison against the anchor's Table 1
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 CIFAR-10 / ResNet-18, mean +/- std over all ten target classes -- the same aggregation
 the anchor paper uses, which is why the ten-class sweep was run rather than a single

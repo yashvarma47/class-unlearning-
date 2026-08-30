@@ -1,6 +1,6 @@
 # Figure inventory
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 Every figure listed as present was checked on disk while this file was written.
 
@@ -30,10 +30,13 @@ move the remaining seven to Appendix E. Three fronts side by side make the class
 spread visible in a way the table cannot; ten in sequence makes a reader skip the
 section.
 
-## 2. Write-up figures -- 6 of 6 present
+## 2. Write-up figures -- 7 of 7 present
 
-All in `results/writeup_package/figures/`, built by
-`experiments/build_writeup_figures.py` from the CSVs in this package. 300 dpi PNG.
+All in `results/writeup_package/figures/`, 300 dpi PNG. The first six are built by
+`experiments/build_writeup_figures.py` from the CSVs in this package;
+`class_structure_analysis.png` is built by
+`experiments/build_class_structure_figure.py` from
+`results/analysis/class_structure/`.
 
 | file | what it shows | size |
 |:---|:---|---:|
@@ -43,6 +46,7 @@ All in `results/writeup_package/figures/`, built by
 | `operator_frequency_selected_cstar.png` | Operator frequency across the ten selected C* (bar) | 136 KB |
 | `benchmark_comparison.png` | Anchor vs pure vs hybrid on four metrics (dot, small multiples) | 240 KB |
 | `truck_failure_analysis.png` | Predicted class of the 1,000 truck test images under four models (bar, small multiples) | 251 KB |
+| `class_structure_analysis.png` | Structure per class, structure against difficulty, and the inter-class similarity matrix (bar + scatter + heatmap) | 561 KB |
 
 ### What each is for
 
@@ -58,6 +62,8 @@ All in `results/writeup_package/figures/`, built by
 
 **`truck_failure_analysis.png`** -- Discussion, the truck section. This is the figure that turns truck from a confession into a finding.
 
+**`class_structure_analysis.png`** -- Results, as the FIRST figure of the chapter -- it is the measurement the whole project rests on. Panel B is also the honest answer to RQ3 and belongs in the discussion beside the truck section; do not caption it as though structure predicts difficulty, because it does not.
+
 ### Design notes worth carrying into the captions
 
 Figures 1-3 share one class order -- by pure `ACC_f`, worst first -- so they read across
@@ -69,13 +75,19 @@ the ten Pareto figures, so both sets read as one system in the same document; it
 validated for categorical use on a light surface, and light-surface only, which is what
 a printed page is.
 
-## 3. Class-structure figures -- data present, figures NOT built
+## 3. Class-structure figure -- built
 
-`results/analysis/class_structure/` holds `channel_contrast_all_classes.csv`,
-`per_class_groups.csv` and `summary.json`. These are the measurements that motivate the
-whole project -- per-channel activation contrast against a null control -- and they are
-the natural first figure of the results chapter. **No plot of them exists.** The data
-needs no new experiment; only the plotting is outstanding.
+`class_structure_analysis.png`, three panels, from
+`results/analysis/class_structure/summary.json` and
+`channel_contrast_all_classes.csv` by `experiments/build_class_structure_figure.py`.
+The 10x10 matrix behind panel C is written out as `class_structure_similarity.csv`
+beside this file.
+
+It is the measurement the whole project rests on, so it belongs first in the results
+chapter -- but read panel B before writing the caption. Structure explains the
+**regime** (class-level forget sets have it, instance-level ones do not) and not the
+**ranking** (it does not predict which class is hard). See
+`missing_figures_status.md` for what the panels do and do not establish.
 
 ## 4. Figures that do not exist and would need new experiments
 

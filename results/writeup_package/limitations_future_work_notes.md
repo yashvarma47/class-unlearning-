@@ -1,6 +1,6 @@
 # Limitations and future work -- working notes
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 Written to be defensible rather than modest. Each limitation states what was done,
 what it does not license, and what would fix it.
@@ -83,17 +83,31 @@ what it does not license, and what would fix it.
   Worst class on every headline metric, before and after refinement.
 - What is known: the failure is stable and reproducible, not noise, and refinement
   helps truck more than any other class while still leaving it worst.
-- What is not known: **why**. Two hypotheses are open -- confusability with the
-  automobile class, and lower forget-specific activation contrast -- and neither has
-  been tested. The instrument for testing the second already exists in
-  `results/analysis/class_structure/`.
+- Both open hypotheses have now been tested against the committed class-structure
+  measurement, and the results are in `class_structure_analysis.png`.
+- **Lower activation contrast: ruled out.** Truck is sixth of ten on median SNR and
+  fifth on channels above the noise floor, and the correlation between structure and
+  `ACC_f` across the ten classes is null (Pearson -0.04). Automobile has the least
+  structure of any class and forgets 3.3x better than truck.
+- **Confusability with automobile: supported, but not established as the cause.**
+  Truck's nearest neighbour in channel-contrast space is automobile (0.32), mutually,
+  and a model that never saw a truck sends 68.4% of them to automobile. Two independent
+  measurements agree on the pair. But maximum similarity does not predict `ACC_f`
+  either (Pearson -0.08), and airplane is decisive against the simple version: highest
+  similarity to another class of any of the ten, and `ACC_f` 0.00.
+- So **why truck is hard remains open.** What can be said is narrower and still worth
+  saying: the failure is stable, it is not explained by how much forget-specific
+  structure the class has, and it coincides with truck sharing more of its structure
+  with a retained class than with anything else.
 - What it does not license: describing MED-US as reliable across classes. It is
-  reliable on retention and variable on forgetting, and the variation is large.
-- Fix, and the cheapest high-value work outstanding: regress per-class `ACC_f` against
-  the activation-contrast statistic and against inter-class confusability. If the ten
-  points fall on a line, the failure mode becomes predictable before any unlearning is
-  attempted, which turns the weakest result in the dissertation into its most useful
-  claim. No new training required.
+  reliable on retention and variable on forgetting, and the variation is large. Nor
+  does it license the claim, floated before the regression was run, that per-class
+  difficulty is predictable in advance from the structure statistic. It is not.
+- Fix: a per-class predictor would need something these artefacts do not contain --
+  candidate directions include the overlap between the channels an operator actually
+  edits and the channels a retained neighbour depends on, which is measurable from
+  `channel_contrast_all_classes.csv` plus the selected genomes, and was not attempted
+  here.
 
 ## 6. No full ablation
 
@@ -129,12 +143,17 @@ what it does not license, and what would fix it.
 
 ## Priority if time is limited
 
-1. **Item 5** -- the per-class regression. No new training, and it converts the
-   weakest result into the strongest claim.
-2. **Item 6** -- random search at equal budget. Defends the method choice.
-3. **Item 3** -- baselines in this harness. The largest scientific gap, and the most
-   expensive of the three.
-4. **Item 2** -- extra search seeds on a subset of classes.
+1. **Item 6** -- random search at equal budget. Cheapest of the three, and it defends
+   the method choice against the first question a viva will ask.
+2. **Item 3** -- baselines in this harness. The largest scientific gap, and the most
+   expensive.
+3. **Item 2** -- extra search seeds on a subset of classes.
 
 Items 1, 4 and 7 are best handled in the text as scope statements rather than as
 outstanding work.
+
+**No longer outstanding:** the per-class regression that earlier versions of this file
+listed first. It has been run against the committed class-structure measurement and
+returned a null (Pearson -0.04 for structure magnitude, -0.08 for maximum inter-class
+similarity). It is now a reported result, not a plan -- see item 5 and
+`class_structure_analysis.png`.

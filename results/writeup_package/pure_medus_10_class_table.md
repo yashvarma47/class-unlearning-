@@ -1,6 +1,6 @@
 # Table: pure MED-US, all ten CIFAR-10 classes
 
-Generated 2026-08-30T21:57:42+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
+Generated 2026-08-30T22:55:44+00:00 by `experiments/build_writeup_package.py` from committed artefacts. Nothing here was recomputed, re-measured or re-run.
 
 Every row is **pure gradient-free weight surgery**. No gradient step was applied to
 any of these models. The accepted BN-frozen refinements are a different method and

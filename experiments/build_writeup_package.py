@@ -630,6 +630,13 @@ NEW_FIGURES = [
      "Predicted class of the 1,000 truck test images under four models (bar, small multiples)",
      "Discussion, the truck section. This is the figure that turns truck from a "
      "confession into a finding."),
+    ("class_structure_analysis.png",
+     "Structure per class, structure against difficulty, and the inter-class "
+     "similarity matrix (bar + scatter + heatmap)",
+     "Results, as the FIRST figure of the chapter -- it is the measurement the whole "
+     "project rests on. Panel B is also the honest answer to RQ3 and belongs in the "
+     "discussion beside the truck section; do not caption it as though structure "
+     "predicts difficulty, because it does not."),
 ]
 
 
@@ -683,8 +690,11 @@ section.
 
 ## 2. Write-up figures -- {len(NEW_FIGURES) - len(missing)} of {len(NEW_FIGURES)} present
 
-All in `results/writeup_package/figures/`, built by
-`experiments/build_writeup_figures.py` from the CSVs in this package. 300 dpi PNG.
+All in `results/writeup_package/figures/`, 300 dpi PNG. The first six are built by
+`experiments/build_writeup_figures.py` from the CSVs in this package;
+`class_structure_analysis.png` is built by
+`experiments/build_class_structure_figure.py` from
+`results/analysis/class_structure/`.
 
 {table(["file", "what it shows", "size"], new_rows, "llr")}
 
@@ -703,13 +713,19 @@ the ten Pareto figures, so both sets read as one system in the same document; it
 validated for categorical use on a light surface, and light-surface only, which is what
 a printed page is.
 
-## 3. Class-structure figures -- data present, figures NOT built
+## 3. Class-structure figure -- built
 
-`results/analysis/class_structure/` holds `channel_contrast_all_classes.csv`,
-`per_class_groups.csv` and `summary.json`. These are the measurements that motivate the
-whole project -- per-channel activation contrast against a null control -- and they are
-the natural first figure of the results chapter. **No plot of them exists.** The data
-needs no new experiment; only the plotting is outstanding.
+`class_structure_analysis.png`, three panels, from
+`results/analysis/class_structure/summary.json` and
+`channel_contrast_all_classes.csv` by `experiments/build_class_structure_figure.py`.
+The 10x10 matrix behind panel C is written out as `class_structure_similarity.csv`
+beside this file.
+
+It is the measurement the whole project rests on, so it belongs first in the results
+chapter -- but read panel B before writing the caption. Structure explains the
+**regime** (class-level forget sets have it, instance-level ones do not) and not the
+**ranking** (it does not predict which class is hard). See
+`missing_figures_status.md` for what the panels do and do not establish.
 
 ## 4. Figures that do not exist and would need new experiments
 
@@ -818,12 +834,57 @@ it. Regenerating frog's data under the newer name would produce a second file wi
 different columns describing the same front, so it was not done. **All ten classes have
 their plotted values on disk.**
 
-## Not generated, and why
+## Generated: `class_structure_analysis.png`, and it returned a null result
 
-**Class-structure figures.** The data is committed in
-`results/analysis/class_structure/` and needs no new experiment, but plotting it was
-outside this task's scope. This is the natural first figure of the results chapter and
-is the cheapest remaining figure work -- it costs nothing but the plotting.
+Built from `results/analysis/class_structure/summary.json` and
+`channel_contrast_all_classes.csv` -- both committed. No new experiment; the only
+computation is arithmetic over those files. It also writes
+`class_structure_similarity.csv`, the 10x10 matrix behind panel C.
+
+**Panel A -- structure exists, in every class.** Between 84.1% (horse) and 91.2% (ship)
+of channels stand above the noise floor, against **0.55%** for the predecessor project's
+instance-level forget set, where the null control gives 1.00% by construction. Three
+orders of magnitude. This is the project's founding result and it holds for all ten.
+
+**Panel B -- structure does NOT predict difficulty, and this is the important finding.**
+Median SNR against pure `ACC_f` is a null scatter: **Pearson r = -0.04 over ten points**.
+Truck is sixth of ten on median SNR and fifth on channels above the floor, yet its
+`ACC_f` of 42.10 is more than double the next worst. Automobile has the **least**
+structure of any class and forgets 3.3x better than truck.
+
+This matters for the write-up. `limitations_future_work_notes.md` proposed regressing
+per-class `ACC_f` on the activation-contrast statistic and called it "the strongest
+contribution available". **That regression has now been run and it is null.** The
+proposal should be corrected rather than left standing as future work, and the null
+reported: a reader will otherwise assume the obvious explanation, which the data does
+not support.
+
+**Panel C -- the similarity matrix, which does support the truck reading.** Cosine
+similarity between the per-class channel-contrast vectors recovers the semantic
+grouping without being told it: vehicles with vehicles (airplane-ship 0.41,
+truck-automobile 0.32, ship-truck 0.29), animals with animals (cat-dog 0.30,
+deer-frog 0.30, bird-deer 0.29). That it reproduces a structure nobody encoded is the
+evidence the measurement means something.
+
+**Truck's nearest neighbour is automobile (0.32), and the relation is mutual** --
+automobile's nearest is truck. That matches `truck_failure_analysis.png` exactly, where
+a model that never saw a truck sends 68.4% of them to automobile. Two independent
+measurements, one on activations of `W_0` and one on predictions of four unlearned
+models, point at the same pair.
+
+### What this figure must NOT be captioned as showing
+
+That similarity predicts difficulty. **It does not**: Pearson r = -0.08 between each
+class's maximum similarity to any other class and its `ACC_f`. Airplane is the
+counterexample and it is decisive -- it has the highest similarity to another class of
+any of the ten (0.41, with ship) and still reaches `ACC_f` 0.00.
+
+The defensible claim is narrower and still worth making: truck's difficulty **coincides
+with** its structure being most shared with a class that stays, and two independent
+measurements agree on which class that is. Whether that sharing is the *cause* is not
+established by these artefacts.
+
+## Not generated, and why
 
 **Seed-variance, ablation, baseline and runtime figures.** These cannot be built from
 existing artefacts, because the underlying experiments have not been run. Building them
@@ -947,12 +1008,16 @@ this package.
 - The ordering is not random noise across a uniform method -- it is stable, wide, and
   the same classes stay weak after refinement. Truck is worst pure and worst hybrid;
   airplane is best pure and best hybrid.
-- The natural reading: how much forget-specific structure a class has determines how
-  well weight editing can remove it. The class-structure measurement in
-  `results/analysis/class_structure/` is the instrument for testing that, and the
-  regression against per-class `ACC_f` has not been run.
-- State it as an observation supported by ordering, not as a demonstrated
-  correlation, until that regression exists.
+- The natural reading -- that how much forget-specific structure a class has determines
+  how well weight editing can remove it -- **has now been tested against the committed
+  class-structure measurement, and it is false.** Pearson r between median SNR and
+  `ACC_f` is -0.04 over the ten classes. See `class_structure_analysis.png`, panel B.
+- Report the null. It is a better result than the correlation would have been, because
+  it says the structure measurement answers a *regime* question (class-level forget
+  sets have structure, instance-level ones do not) and not a *ranking* one, and it
+  stops a reader assuming the obvious explanation.
+- What survives: the ordering is stable and wide, and it is not explained by structure
+  magnitude. Why it varies remains open.
 
 ## Truck as the weakest class
 
@@ -1232,17 +1297,31 @@ what it does not license, and what would fix it.
   Worst class on every headline metric, before and after refinement.
 - What is known: the failure is stable and reproducible, not noise, and refinement
   helps truck more than any other class while still leaving it worst.
-- What is not known: **why**. Two hypotheses are open -- confusability with the
-  automobile class, and lower forget-specific activation contrast -- and neither has
-  been tested. The instrument for testing the second already exists in
-  `results/analysis/class_structure/`.
+- Both open hypotheses have now been tested against the committed class-structure
+  measurement, and the results are in `class_structure_analysis.png`.
+- **Lower activation contrast: ruled out.** Truck is sixth of ten on median SNR and
+  fifth on channels above the noise floor, and the correlation between structure and
+  `ACC_f` across the ten classes is null (Pearson -0.04). Automobile has the least
+  structure of any class and forgets 3.3x better than truck.
+- **Confusability with automobile: supported, but not established as the cause.**
+  Truck's nearest neighbour in channel-contrast space is automobile (0.32), mutually,
+  and a model that never saw a truck sends 68.4% of them to automobile. Two independent
+  measurements agree on the pair. But maximum similarity does not predict `ACC_f`
+  either (Pearson -0.08), and airplane is decisive against the simple version: highest
+  similarity to another class of any of the ten, and `ACC_f` 0.00.
+- So **why truck is hard remains open.** What can be said is narrower and still worth
+  saying: the failure is stable, it is not explained by how much forget-specific
+  structure the class has, and it coincides with truck sharing more of its structure
+  with a retained class than with anything else.
 - What it does not license: describing MED-US as reliable across classes. It is
-  reliable on retention and variable on forgetting, and the variation is large.
-- Fix, and the cheapest high-value work outstanding: regress per-class `ACC_f` against
-  the activation-contrast statistic and against inter-class confusability. If the ten
-  points fall on a line, the failure mode becomes predictable before any unlearning is
-  attempted, which turns the weakest result in the dissertation into its most useful
-  claim. No new training required.
+  reliable on retention and variable on forgetting, and the variation is large. Nor
+  does it license the claim, floated before the regression was run, that per-class
+  difficulty is predictable in advance from the structure statistic. It is not.
+- Fix: a per-class predictor would need something these artefacts do not contain --
+  candidate directions include the overlap between the channels an operator actually
+  edits and the channels a retained neighbour depends on, which is measurable from
+  `channel_contrast_all_classes.csv` plus the selected genomes, and was not attempted
+  here.
 
 ## 6. No full ablation
 
@@ -1278,15 +1357,20 @@ what it does not license, and what would fix it.
 
 ## Priority if time is limited
 
-1. **Item 5** -- the per-class regression. No new training, and it converts the
-   weakest result into the strongest claim.
-2. **Item 6** -- random search at equal budget. Defends the method choice.
-3. **Item 3** -- baselines in this harness. The largest scientific gap, and the most
-   expensive of the three.
-4. **Item 2** -- extra search seeds on a subset of classes.
+1. **Item 6** -- random search at equal budget. Cheapest of the three, and it defends
+   the method choice against the first question a viva will ask.
+2. **Item 3** -- baselines in this harness. The largest scientific gap, and the most
+   expensive.
+3. **Item 2** -- extra search seeds on a subset of classes.
 
 Items 1, 4 and 7 are best handled in the text as scope statements rather than as
 outstanding work.
+
+**No longer outstanding:** the per-class regression that earlier versions of this file
+listed first. It has been run against the committed class-structure measurement and
+returned a null (Pearson -0.04 for structure magnitude, -0.08 for maximum inter-class
+similarity). It is now a reported result, not a plan -- see item 5 and
+`class_structure_analysis.png`.
 """)
 
 
