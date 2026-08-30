@@ -1,0 +1,11 @@
+class_id,class_name,verdict,selected_epoch,log_epochs,seed,D_f_test_acc,D_r_test_acc,D_f_test_loss,D_r_test_loss,full_test_acc,D_f_train,D_r_train,D_f_test,D_r_test,sha256_prefix,source_zip
+0,airplane,PASS,135,200,42,0.0000,0.9516,9.9663,0.1973,0.8564,5000,45000,1000,9000,283da38e314e,reference_outputs_yash_airplane.zip
+1,automobile,PASS,191,200,42,0.0000,0.9476,11.5187,0.2113,0.8528,5000,45000,1000,9000,5d07d03e6655,reference_outputs_yash_automobile.zip
+2,bird,PASS,159,200,42,0.0000,0.9526,10.2204,0.1951,0.8573,5000,45000,1000,9000,3750f7f565c1,reference_outputs_yash_bird.zip
+3,cat,PASS,195,200,42,0.0000,0.9612,10.4254,0.1530,0.8651,5000,45000,1000,9000,60ba8b8bf71a,reference_outputs_pragati_cat.zip
+4,deer,PASS,189,200,42,0.0000,0.9457,9.3447,0.2203,0.8511,5000,45000,1000,9000,cca3b78022c8,reference_outputs_pragati_deer.zip
+5,dog,PASS,151,200,42,0.0000,0.9576,11.0671,0.1664,0.8618,5000,45000,1000,9000,f2bb585dbc49,reference_outputs_pragati_dog.zip
+6,frog,PASS,163,200,42,0.0000,0.9459,10.1853,0.2191,0.8513,5000,45000,1000,9000,c44f3f99e8a3,"(local training, never packaged)"
+7,horse,PASS,162,200,42,0.0000,0.9423,9.9951,0.2382,0.8481,5000,45000,1000,9000,478d67d102fe,reference_outputs_aditya.zip
+8,ship,PASS,181,200,42,0.0000,0.9502,10.3602,0.1986,0.8552,5000,45000,1000,9000,852fc08e8cb0,reference_outputs_trial_ship.zip
+9,truck,PASS,174,200,42,0.0000,0.9514,10.1766,0.1997,0.8563,5000,45000,1000,9000,52c6e8d7c132,reference_outputs_aditya.zip

@@ -1,0 +1,11 @@
+class_id,class_name,source,refinement_status,operators,ACC_r,ACC_f,composite,MIA,selectivity_S,parameter_movement,buffer_movement
+0,airplane,pure C*,no-op,CLIP|DAMP|MASK,92.86,0.00,92.86,100.00,221.25,,
+1,automobile,refined (hybrid),accepted,pure C* + 1 forget step + 1 retain repair (BN frozen),92.60,5.50,87.51,95.80,178.42,0.000368,0.000000
+2,bird,refined (hybrid),accepted,pure C* + 1 forget step + 1 retain repair (BN frozen),94.90,12.50,83.04,93.70,1305.45,0.000343,0.000000
+3,cat,refined (hybrid),accepted,pure C* + 1 forget step + 1 retain repair (BN frozen),94.56,6.00,88.88,96.70,172.64,0.000303,0.000000
+4,deer,refined (hybrid),accepted,pure C* + 1 forget step + 1 retain repair (BN frozen),94.09,4.30,90.04,97.50,1262.49,0.000373,0.000000
+5,dog,refined (hybrid),accepted,pure C* + 1 forget step + 1 retain repair (BN frozen),95.57,1.90,93.75,99.50,4950.81,0.000357,0.000000
+6,frog,refined (hybrid),accepted,DAMP|MASK + 2 gradient steps,92.56,2.70,90.06,96.30,297.25,0.000420,0.000000
+7,horse,refined (hybrid),accepted,pure C* + 1 forget step + 1 retain repair (BN frozen),92.93,7.00,86.43,92.80,185.79,0.000394,0.000000
+8,ship,refined (hybrid),accepted,DAMP|MASK + 2 gradient steps,94.49,4.70,90.05,99.10,2832.90,0.000409,0.000000
+9,truck,refined (hybrid),accepted,pure C* + 1 forget step + 1 retain repair (BN frozen),92.68,30.90,64.04,79.10,107.42,0.000307,0.000000

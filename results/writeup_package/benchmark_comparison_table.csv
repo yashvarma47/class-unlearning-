@@ -1,0 +1,13 @@
+method,source,measured_in_this_harness,gradient_free,ACC_r_mean,ACC_r_std,ACC_f_mean,ACC_f_std,MIA_mean,MIA_std
+Original,"Kodge et al. 2024, Table 1",no,n/a,94.89,0.31,94.89,2.75,0.03,0.03
+Retraining (gold standard),"Kodge et al. 2024, Table 1",no,n/a,94.81,0.52,0.00,--,100.00,0.00
+NegGrad,"Kodge et al. 2024, Table 1",no,no,69.89,10.23,0.02,0.04,0.00,--
+NegGrad+,"Kodge et al. 2024, Table 1",no,no,89.91,1.41,0.94,1.87,98.68,1.42
+UNSIR (Tarun et al. 2023),"Kodge et al. 2024, Table 1",no,no,92.20,0.72,10.89,8.79,61.50,25.86
+SCRUB (Kurmanji et al. 2023),"Kodge et al. 2024, Table 1",no,no,94.79,0.63,0.00,--,0.00,--
+SSD (Foster et al. 2024),"Kodge et al. 2024, Table 1",no,yes,85.76,25.76,4.37,12.79,87.86,31.21
+Kodge et al. 2024 (anchor),"Kodge et al. 2024, Table 1",no,yes,94.19,0.50,0.03,0.09,95.50,14.23
+Original W_0 (this work),this work,yes,n/a,94.79,0.29,94.79,2.59,0.00,0.00
+Retraining W_ref (this work),this work,yes,n/a,95.06,0.57,0.00,0.00,100.00,0.00
+MED-US pure (this work),this work,yes,yes,93.84,1.15,12.55,11.57,92.54,8.62
+MED-US hybrid (this work),this work,yes,no,93.72,1.12,7.55,8.87,95.05,6.08

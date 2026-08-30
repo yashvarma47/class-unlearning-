@@ -1,0 +1,548 @@
+<title>MED-US Dissertation Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F5F7F9;
+    --surface:#FFFFFF;
+    --surface-2:#EDF0F4;
+    --ink:#14171C;
+    --muted:#5B6472;
+    --faint:#8A93A1;
+    --rule:#DCE1E8;
+    --accent:#2E4A7D;
+    --flag:#9A5B15;
+    --flag-soft:#F6EADC;
+    --solid:#2C6355;
+    --solid-soft:#E0EDE8;
+    --shadow:0 1px 2px rgba(20,23,28,.05), 0 8px 24px -18px rgba(20,23,28,.35);
+    --serif:"Spectral",Georgia,"Times New Roman",serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#101319;
+      --surface:#171B22;
+      --surface-2:#1E232C;
+      --ink:#E7EAEF;
+      --muted:#9AA3B1;
+      --faint:#6E7887;
+      --rule:#2A303A;
+      --accent:#93AEDD;
+      --flag:#D9A264;
+      --flag-soft:#2C2318;
+      --solid:#78B7A5;
+      --solid-soft:#182722;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#101319;
+    --surface:#171B22;
+    --surface-2:#1E232C;
+    --ink:#E7EAEF;
+    --muted:#9AA3B1;
+    --faint:#6E7887;
+    --rule:#2A303A;
+    --accent:#93AEDD;
+    --flag:#D9A264;
+    --flag-soft:#2C2318;
+    --solid:#78B7A5;
+    --solid-soft:#182722;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px 96px}
+
+  header.top{
+    border-bottom:1px solid var(--rule);
+    padding:56px 0 28px;
+    margin-bottom:40px;
+  }
+  .eyebrow{
+    font-family:var(--sans);
+    font-size:11.5px;
+    font-weight:500;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin:0 0 18px;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(34px,5.2vw,52px);
+    line-height:1.08;
+    letter-spacing:-.015em;
+    margin:0 0 16px;
+    text-wrap:balance;
+  }
+  .standfirst{
+    font-size:18px;
+    color:var(--muted);
+    max-width:62ch;
+    margin:0 0 30px;
+  }
+  .standfirst em{color:var(--ink);font-style:italic}
+
+  .facts{
+    display:flex;
+    flex-wrap:wrap;
+    border:1px solid var(--rule);
+    border-radius:3px;
+    background:var(--surface);
+    overflow:hidden;
+    margin:0;
+  }
+  .fact{
+    flex:1 1 150px;
+    padding:14px 18px;
+    border-right:1px solid var(--rule);
+  }
+  .fact:last-child{border-right:none}
+  .fact dt{
+    font-family:var(--sans);
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin:0 0 4px;
+  }
+  .fact dd{
+    margin:0;
+    font-family:var(--sans);
+    font-size:19px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:-.01em;
+  }
+
+  .cols{display:grid;grid-template-columns:212px minmax(0,1fr);gap:52px;align-items:start}
+  @media (max-width:920px){ .cols{grid-template-columns:1fr;gap:0} nav.rail{display:none} }
+
+  nav.rail{position:sticky;top:24px;font-family:var(--sans)}
+  nav.rail h2{
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);font-weight:500;margin:0 0 12px;
+  }
+  nav.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+  nav.rail a{
+    display:grid;grid-template-columns:20px 1fr;gap:8px;
+    text-decoration:none;color:var(--muted);
+    font-size:13px;line-height:1.35;padding:6px 8px;
+    border-radius:3px;border-left:2px solid transparent;
+  }
+  nav.rail a:hover{background:var(--surface-2);color:var(--ink);border-left-color:var(--accent)}
+  nav.rail .n{color:var(--faint);font-variant-numeric:tabular-nums;font-size:12px}
+
+  section.ch{
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    box-shadow:var(--shadow);
+    margin-bottom:22px;
+    overflow:hidden;
+    scroll-margin-top:20px;
+  }
+  .ch-head{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:18px;
+    align-items:baseline;
+    padding:20px 24px 16px;
+    border-bottom:1px solid var(--rule);
+  }
+  .ch-num{
+    font-family:var(--sans);
+    font-size:12px;font-weight:600;
+    letter-spacing:.08em;
+    color:var(--accent);
+    font-variant-numeric:tabular-nums;
+    padding-top:5px;
+  }
+  .ch-head h3{
+    font-family:var(--serif);
+    font-size:23px;font-weight:600;letter-spacing:-.012em;
+    margin:0 0 5px;text-wrap:balance;
+  }
+  .ch-job{font-size:14.5px;color:var(--muted);margin:0;max-width:64ch}
+  .budget{
+    font-family:var(--sans);font-size:12px;font-weight:500;
+    color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  @media (max-width:600px){
+    .ch-head{grid-template-columns:auto 1fr}
+    .budget{grid-column:2;justify-self:start}
+  }
+
+  ol.subs{list-style:none;margin:0;padding:6px 0}
+  ol.subs > li{
+    display:grid;
+    grid-template-columns:52px minmax(0,1fr);
+    gap:0 14px;
+    padding:9px 24px;
+  }
+  ol.subs > li + li{border-top:1px solid var(--rule)}
+  .sn{
+    font-family:var(--sans);font-size:12.5px;color:var(--faint);
+    font-variant-numeric:tabular-nums;padding-top:3px;
+  }
+  .st{font-size:15.5px;line-height:1.45}
+  .note{
+    display:block;font-size:13.5px;color:var(--muted);
+    margin-top:3px;max-width:68ch;
+  }
+  ol.deep{list-style:none;margin:7px 0 2px;padding:0;display:flex;flex-direction:column;gap:4px}
+  ol.deep li{
+    font-size:13.5px;color:var(--muted);
+    padding-left:14px;position:relative;
+  }
+  ol.deep li::before{
+    content:"";position:absolute;left:0;top:.62em;
+    width:6px;height:1px;background:var(--rule);
+  }
+  ol.deep code{font-size:12.5px}
+
+  code{font-family:var(--sans);font-size:13px;background:var(--surface-2);padding:1px 4px;border-radius:2px;color:var(--ink)}
+
+  .chip{
+    display:inline-block;font-family:var(--sans);
+    font-size:10.5px;font-weight:500;letter-spacing:.055em;text-transform:uppercase;
+    padding:2px 7px;border-radius:2px;margin-left:8px;
+    vertical-align:1.5px;white-space:nowrap;
+  }
+  .chip.have{background:var(--solid-soft);color:var(--solid)}
+  .chip.gate{background:var(--flag-soft);color:var(--flag)}
+
+  section.matter{
+    border:1px dashed var(--rule);
+    border-radius:4px;
+    padding:20px 24px;
+    margin-bottom:22px;
+    scroll-margin-top:20px;
+  }
+  section.matter h3{
+    font-family:var(--sans);font-size:11px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--faint);
+    margin:0 0 14px;
+  }
+  section.matter ul{list-style:none;margin:0;padding:0;display:grid;gap:9px;
+    grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+  section.matter li{font-size:14.5px;line-height:1.35}
+  section.matter li span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:22px;align-items:center;
+    font-family:var(--sans);font-size:12.5px;color:var(--muted);
+    margin:0 0 26px;padding:12px 16px;
+    background:var(--surface-2);border-radius:3px;
+  }
+  .legend .chip{margin-left:0;margin-right:7px}
+
+  footer.end{
+    margin-top:34px;padding-top:22px;border-top:1px solid var(--rule);
+    font-size:14.5px;color:var(--muted);max-width:68ch;
+  }
+  footer.end strong{color:var(--ink);font-weight:600}
+  footer.end p{margin:0 0 14px}
+
+  h2.divider{
+    font-family:var(--sans);font-size:11px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--faint);
+    margin:34px 0 14px;
+  }
+  h2.divider.first{margin-top:0}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">MSc Computer Science with AI &middot; University of Nottingham</p>
+  <h1>MED-US Dissertation Blueprint</h1>
+  <p class="standfirst">Chapter and section structure for <em>Multi-objective evolutionary search for layer-wise class unlearning</em>. The spine is not &ldquo;we beat the state of the art&rdquo; &mdash; it is <em>a negative result, a mechanistic explanation, a falsifiable prediction, and its confirmation</em>. Every chapter below is arranged to carry that argument.</p>
+  <dl class="facts">
+    <div class="fact"><dt>Chapters</dt><dd>8</dd></div>
+    <div class="fact"><dt>Word budget</dt><dd>18,000</dd></div>
+    <div class="fact"><dt>Numbered sections</dt><dd>62</dd></div>
+    <div class="fact"><dt>Appendices</dt><dd>6</dd></div>
+    <div class="fact"><dt>Gated on experiments</dt><dd>11</dd></div>
+  </dl>
+</header>
+
+<div class="cols">
+<nav class="rail" aria-label="Contents">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#front"><span class="n">&mdash;</span><span>Front matter</span></a></li>
+    <li><a href="#c1"><span class="n">1</span><span>Introduction</span></a></li>
+    <li><a href="#c2"><span class="n">2</span><span>Background &amp; Literature</span></a></li>
+    <li><a href="#c3"><span class="n">3</span><span>Problem Formulation</span></a></li>
+    <li><a href="#c4"><span class="n">4</span><span>Methodology: MED-US</span></a></li>
+    <li><a href="#c5"><span class="n">5</span><span>Experimental Design</span></a></li>
+    <li><a href="#c6"><span class="n">6</span><span>Results</span></a></li>
+    <li><a href="#c7"><span class="n">7</span><span>Analysis &amp; Discussion</span></a></li>
+    <li><a href="#c8"><span class="n">8</span><span>Conclusion</span></a></li>
+    <li><a href="#back"><span class="n">&mdash;</span><span>Back matter</span></a></li>
+  </ol>
+</nav>
+
+<main>
+  <div class="legend">
+    <span><span class="chip have">evidence in hand</span>written from what the repo already holds</span>
+    <span><span class="chip gate">needs an experiment</span>blocked until the outstanding work lands</span>
+  </div>
+
+  <h2 class="divider first">Preliminary pages</h2>
+  <section class="matter" id="front">
+    <h3>Front matter &middot; unnumbered</h3>
+    <ul>
+      <li>Title page<span>Standard school format</span></li>
+      <li>Abstract<span>~300 words; lead with the structure precondition, not the accuracy</span></li>
+      <li>Acknowledgements<span>Supervisor; Aditya and Pragati for the Kaggle reference training</span></li>
+      <li>Table of Contents</li>
+      <li>List of Figures<span>Ten Pareto fronts, the SNR chart, the confusability scatter</span></li>
+      <li>List of Tables<span>Anchor Table 1 comparison, ten-class summary, pure vs hybrid</span></li>
+      <li>Abbreviations and Notation<span>Define <code>D_f</code>, <code>D_r</code>, <code>W_0</code>, <code>W_ref</code>, <code>C*</code>, <code>S</code> once, here</span></li>
+    </ul>
+  </section>
+
+  <h2 class="divider">Body</h2>
+
+  <section class="ch" id="c1">
+    <div class="ch-head">
+      <div class="ch-num">CH 1</div>
+      <div>
+        <h3>Introduction</h3>
+        <p class="ch-job">Establish that the interesting question is <em>when</em> weight-editing unlearning can work at all &mdash; and that a prior failure is what makes it interesting.</p>
+      </div>
+      <div class="budget">1,200 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">1.1</span><span class="st">The right to erasure and the cost of retraining<span class="note">GDPR Art. 17 as the motivating obligation; retraining a ResNet-18 from scratch as the price of honouring it naively.</span></span></li>
+      <li><span class="sn">1.2</span><span class="st">Approximate unlearning by post-hoc weight editing<span class="note">The deployment case for a method that touches weights once, needs no optimiser state and no retain-set training loop.</span></span></li>
+      <li><span class="sn">1.3</span><span class="st">The predecessor result: an exhaustive search that found nothing<span class="chip have">evidence in hand</span><span class="note">10,534 instance-level strategies, 3 operator families, 5 selectors, 4 objective formulations. Best selectivity ever measured: <code>S = 1.158</code>, against <code>S &asymp; 932</code> for retraining. Damage to <code>D_f</code> and to <code>D_r</code> was empirically identical.</span></span></li>
+      <li><span class="sn">1.4</span><span class="st">From failure to hypothesis<span class="chip have">evidence in hand</span><span class="note">Activation contrast put 0.55% of channels above the noise floor where chance alone gives 1.00%. There was no forget-specific structure for any edit to remove &mdash; which predicts that a genuinely distinct <code>D_f</code> should behave differently. State the prediction here, before testing it.</span></span></li>
+      <li><span class="sn">1.5</span><span class="st">Research questions<span class="note">RQ1 structure as precondition &middot; RQ2 competitiveness against the gradient-free state of the art &middot; RQ3 what predicts per-class success &middot; RQ4 what one constrained gradient step buys, and what it costs in method purity.</span></span></li>
+      <li><span class="sn">1.6</span><span class="st">Contributions<span class="note">Four claims, each pointing at the chapter that discharges it. Include the negative and partial ones &mdash; the truck failure is a contribution, not an embarrassment.</span></span></li>
+      <li><span class="sn">1.7</span><span class="st">Structure of this dissertation</span></li>
+    </ol>
+  </section>
+
+  <section class="ch" id="c2">
+    <div class="ch-head">
+      <div class="ch-num">CH 2</div>
+      <div>
+        <h3>Background and Literature Review</h3>
+        <p class="ch-job">Map the field by method family and, more importantly, by <em>evaluation protocol</em> &mdash; protocol fragmentation is what makes a fair comparison hard, and saying so here earns the common harness in Chapter 5.</p>
+      </div>
+      <div class="budget">3,500 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">2.1</span><span class="st">Defining machine unlearning
+        <ol class="deep">
+          <li>2.1.1 &nbsp;Exact unlearning and partition-based training (SISA)</li>
+          <li>2.1.2 &nbsp;Approximate unlearning: what is guaranteed, and what is only measured</li>
+          <li>2.1.3 &nbsp;Instance-level versus class-level forget sets, and why the distinction is not cosmetic</li>
+        </ol></span></li>
+      <li><span class="sn">2.2</span><span class="st">Method families
+        <ol class="deep">
+          <li>2.2.1 &nbsp;Retraining as gold standard</li>
+          <li>2.2.2 &nbsp;Gradient-based fine-tuning &mdash; NegGrad, NegGrad+, SalUn, Boundary Unlearning</li>
+          <li>2.2.3 &nbsp;Distillation &mdash; SCRUB, Bad Teaching, and the ZRF metric</li>
+          <li>2.2.4 &nbsp;Impair&ndash;repair &mdash; UNSIR</li>
+          <li>2.2.5 &nbsp;Gradient-free weight editing &mdash; SSD, Kodge et al. <em>(the family this work belongs to)</em></li>
+        </ol></span></li>
+      <li><span class="sn">2.3</span><span class="st">Evaluating unlearning
+        <ol class="deep">
+          <li>2.3.1 &nbsp;Accuracy-based: <code>ACC_r</code>, <code>ACC_f</code>, and the composite <code>ACC_r &times; (1 &minus; ACC_f)</code></li>
+          <li>2.3.2 &nbsp;Membership inference: the SVM-on-confidences attack, LiRA / U-LiRA, and what an MIA number actually certifies</li>
+          <li>2.3.3 &nbsp;The retain-only reference <code>W_ref</code> as an empirical target rather than a bound</li>
+          <li>2.3.4 &nbsp;Protocol fragmentation &mdash; datasets, forget rates, MIA definitions, and which classes each paper actually reports</li>
+        </ol></span></li>
+      <li><span class="sn">2.4</span><span class="st">The anchor: Kodge, Saha &amp; Roy (TMLR 2024)<span class="chip have">evidence in hand</span><span class="note">Method (SVD on layerwise activations, closed-form update), its Table 1 with eight rows averaged over all ten classes, and the justification for anchoring here: same dataset, same architecture, same single-class task, same gradient-free positioning.</span></span></li>
+      <li><span class="sn">2.5</span><span class="st">Multi-objective optimisation
+        <ol class="deep">
+          <li>2.5.1 &nbsp;Pareto dominance and non-dominated fronts</li>
+          <li>2.5.2 &nbsp;NSGA-II: non-dominated sorting, crowding distance, elitism</li>
+          <li>2.5.3 &nbsp;Evolutionary search in model editing, pruning and compression</li>
+        </ol></span></li>
+      <li><span class="sn">2.6</span><span class="st">Gap analysis<span class="note">No prior work treats operator choice as a multi-objective search, and none reports a <em>precondition</em> for weight-editing unlearning. That pair is the gap this dissertation occupies.</span></span></li>
+    </ol>
+  </section>
+
+  <section class="ch" id="c3">
+    <div class="ch-head">
+      <div class="ch-num">CH 3</div>
+      <div>
+        <h3>Problem Formulation</h3>
+        <p class="ch-job">Short, formal and load-bearing. Everything numeric later in the dissertation is defined exactly once, here.</p>
+      </div>
+      <div class="budget">1,200 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">3.1</span><span class="st">Notation and setting</span></li>
+      <li><span class="sn">3.2</span><span class="st">Splits: <code>D_f</code>, <code>D_r</code>, and the four evaluation sets<span class="note">5,000 / 45,000 / 1,000 / 9,000. Note here that the test sets are large enough to be halved &mdash; it sets up the selection protocol in 4.7.</span></span></li>
+      <li><span class="sn">3.3</span><span class="st">Three reference points: <code>W_0</code>, <code>W_ref</code>, and the edited model</span></li>
+      <li><span class="sn">3.4</span><span class="st">The forgetting objective and the retention constraint, stated formally</span></li>
+      <li><span class="sn">3.5</span><span class="st">Selectivity <code>S</code><span class="chip have">evidence in hand</span><span class="note">Definition, the instance-level ceiling of 1.158, and the identity-edit degeneracy: <code>S</code> is <code>nan</code> for a zero edit, every comparison against <code>nan</code> is false, and a naive <code>max()</code> therefore reports the unedited model as most selective. Report the defect and the guard &mdash; it is a methodological note, not a confession.</span></span></li>
+      <li><span class="sn">3.6</span><span class="st">Threat model and scope<span class="note">What the adversary is assumed to hold, and the explicit statement that whole-class forgetting is the only supported mode.</span></span></li>
+    </ol>
+  </section>
+
+  <section class="ch" id="c4">
+    <div class="ch-head">
+      <div class="ch-num">CH 4</div>
+      <div>
+        <h3>Methodology &mdash; MED-US</h3>
+        <p class="ch-job">The method itself, with every design choice justified against an alternative you rejected. This is where a marker looks for engineering judgement rather than results.</p>
+      </div>
+      <div class="budget">3,000 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">4.1</span><span class="st">Design rationale: gradient-free, post-hoc, multi-objective<span class="note">Three separate decisions. Argue each on its own terms rather than as one package.</span></span></li>
+      <li><span class="sn">4.2</span><span class="st">Forget-specific structure as a precondition<span class="chip have">evidence in hand</span><span class="note">The per-channel activation-contrast measurement and its null control built from two disjoint halves of <code>D_r</code>. This belongs in Methodology, not Results &mdash; it is an instrument you built, and it is applied again in 7.2.</span></span></li>
+      <li><span class="sn">4.3</span><span class="st">The operator library
+        <ol class="deep">
+          <li>4.3.1 &nbsp;<code>CLIP</code>, <code>MASK</code>, <code>QUANTIZE</code> &mdash; formal definitions and parameterisation</li>
+          <li>4.3.2 &nbsp;Layer groups and <code>max_level</code></li>
+          <li>4.3.3 &nbsp;The <code>class_contrast</code> selection rule</li>
+        </ol></span></li>
+      <li><span class="sn">4.4</span><span class="st">Genome encoding and the size of the search space<span class="note">State the cardinality explicitly &mdash; it justifies a search rather than enumeration, and it is the number the random-search ablation is measured against.</span></span></li>
+      <li><span class="sn">4.5</span><span class="st">The three objectives
+        <ol class="deep">
+          <li>4.5.1 &nbsp;<code>f1</code> &mdash; Jensen&ndash;Shannon divergence to <code>W_ref</code> on <code>D_f</code></li>
+          <li>4.5.2 &nbsp;<code>f2</code> &mdash; retain training loss</li>
+          <li>4.5.3 &nbsp;<code>f3</code> &mdash; normalised edit cost</li>
+          <li>4.5.4 &nbsp;Why <code>ACC_f</code> is not optimised directly, and what that choice costs</li>
+        </ol></span></li>
+      <li><span class="sn">4.6</span><span class="st">Search procedure<span class="note">NSGA-II configuration, objective caching, subset evaluation during search and full-fidelity re-measurement of the front afterwards. Justify the two-tier fidelity &mdash; it is why a class costs ~8 minutes rather than hours.</span></span></li>
+      <li><span class="sn">4.7</span><span class="st">Selecting <code>C*</code><span class="chip gate">needs an experiment</span><span class="note">The composite rule, applied identically to all ten classes. Then the protocol correction: selection currently reads the same test accuracies it later reports, making <code>C*</code> a best-of-ten on the reported metric. Describe the held-out selection/report split here; report both numbers in 6.2.3.</span></span></li>
+      <li><span class="sn">4.8</span><span class="st">The hybrid variant
+        <ol class="deep">
+          <li>4.8.1 &nbsp;One clipped ascent step on <code>D_f</code>, one repair step on <code>D_r</code></li>
+          <li>4.8.2 &nbsp;Why BatchNorm must be frozen &mdash; eight batches of <code>D_r</code> re-estimated the running statistics and silently undid the operator edit while every weight-based guard reported success</li>
+          <li>4.8.3 &nbsp;Why pure and hybrid are reported separately, permanently: the anchor's method is gradient-free, so only the pure table is a like-for-like comparison</li>
+        </ol></span></li>
+      <li><span class="sn">4.9</span><span class="st">Reproducibility by construction<span class="chip have">evidence in hand</span><span class="note">Self-contained per-class configs rather than inheritance; checkpoint provenance by sha256; byte-for-byte verification when a newly measured row is merged into a committed table. Short, but it is the section that makes every later number credible.</span></span></li>
+    </ol>
+  </section>
+
+  <section class="ch" id="c5">
+    <div class="ch-head">
+      <div class="ch-num">CH 5</div>
+      <div>
+        <h3>Experimental Design</h3>
+        <p class="ch-job">The protocol, written so a stranger could rerun it. Kept separate from Chapter 4 so the method is not entangled with the measurement of it.</p>
+      </div>
+      <div class="budget">2,000 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">5.1</span><span class="st">Dataset, architecture and splits<span class="chip have">evidence in hand</span></span></li>
+      <li><span class="sn">5.2</span><span class="st">The original model <code>W_0</code><span class="chip have">evidence in hand</span><span class="note">One original model; every class is unlearned from it.</span></span></li>
+      <li><span class="sn">5.3</span><span class="st">Ten retain-only references<span class="chip have">evidence in hand</span><span class="note">200 epochs, seed 42, selection on <code>D_r_test</code>, all ten validated at <code>D_f_test = 0.0000</code>, every split byte-compared before import, sha256 recorded. Name the distributed training honestly &mdash; three people, seven Kaggle zips, one local run.</span></span></li>
+      <li><span class="sn">5.4</span><span class="st">Baselines under a common harness<span class="chip gate">needs an experiment</span><span class="note">Retraining, finetune-on-<code>D_r</code>, NegGrad, random-relabel, and a re-implementation of the anchor. The point is not to win, but to compare under one MIA definition and one evaluation set.</span></span></li>
+      <li><span class="sn">5.5</span><span class="st">Metrics as implemented<span class="note">Both MIA definitions side by side, with the reason two exist.</span></span></li>
+      <li><span class="sn">5.6</span><span class="st">Protocol controls<span class="chip gate">needs an experiment</span><span class="note">Seeds, and what a seed does and does not vary: <code>W_0</code> and <code>W_ref</code> are fixed, so extra seeds measure search variance, not training variance. Say so plainly rather than letting a reader assume otherwise. Held-out selection. Evaluation-budget parity across search variants.</span></span></li>
+      <li><span class="sn">5.7</span><span class="st">Ablation design<span class="chip gate">needs an experiment</span><span class="note">NSGA-II against uniform random sampling at matched evaluation count; operator families in isolation; population and generation budget.</span></span></li>
+      <li><span class="sn">5.8</span><span class="st">Compute environment and cost accounting<span class="note">Runtime is a claimed advantage of the method, so it is a measured quantity, not a footnote.</span></span></li>
+    </ol>
+  </section>
+
+  <section class="ch" id="c6">
+    <div class="ch-head">
+      <div class="ch-num">CH 6</div>
+      <div>
+        <h3>Results</h3>
+        <p class="ch-job">Report, do not interpret. Every subsection maps to a research question; the reading of them waits for Chapter 7.</p>
+      </div>
+      <div class="budget">3,500 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">6.1</span><span class="st">Structure: instance-level against class-level <em>(RQ1)</em><span class="chip have">evidence in hand</span><span class="note">The prediction from 1.4, tested. Per-class median SNR and percentage of channels above the noise floor, broken out by <code>layer1</code>&ndash;<code>layer4</code> and <code>fc</code>.</span></span></li>
+      <li><span class="sn">6.2</span><span class="st">The ten-class pure sweep <em>(RQ2)</em>
+        <ol class="deep">
+          <li>6.2.1 &nbsp;Pareto fronts and their geometry &nbsp;<span class="chip have">evidence in hand</span></li>
+          <li>6.2.2 &nbsp;Per-class <code>C*</code> and the aggregate: <code>ACC_r</code> 93.84 &plusmn; 1.15, <code>ACC_f</code> 12.55 &plusmn; 11.57, MIA 92.54 &plusmn; 8.62 &nbsp;<span class="chip have">evidence in hand</span></li>
+          <li>6.2.3 &nbsp;Selected-on-test against held-out selection &nbsp;<span class="chip gate">needs an experiment</span></li>
+          <li>6.2.4 &nbsp;Selectivity <code>S</code> against the instance-level ceiling &nbsp;<span class="chip have">evidence in hand</span></li>
+        </ol></span></li>
+      <li><span class="sn">6.3</span><span class="st">Against the anchor's Table 1<span class="chip have">evidence in hand</span><span class="note">Your row dropped into their table. <code>ACC_r</code> lands about a point low; <code>ACC_f</code> at 12.55 against their 0.03. Report it flatly here and argue about it in 7.6.</span></span></li>
+      <li><span class="sn">6.4</span><span class="st">Baselines re-measured in this harness<span class="chip gate">needs an experiment</span></span></li>
+      <li><span class="sn">6.5</span><span class="st">The hybrid variant <em>(RQ4)</em><span class="chip have">evidence in hand</span><span class="note">Nine eligible classes, nine accepted, zero rejected. <code>ACC_f</code> 12.55 &rarr; 7.55, composite 82.09 &rarr; 86.66, MIA 92.54 &rarr; 95.05, for 0.12 of retain accuracy. BatchNorm buffer movement exactly 0.000000 on every accepted run; parameter movement 0.000303&ndash;0.000420 against a 0.04 budget.</span></span></li>
+      <li><span class="sn">6.6</span><span class="st">Seed stability<span class="chip gate">needs an experiment</span><span class="note">Seeds 7 and 123 on airplane, dog and truck &mdash; best, middle and worst case.</span></span></li>
+      <li><span class="sn">6.7</span><span class="st">Ablations<span class="chip gate">needs an experiment</span><span class="note">Random search at equal budget; operator families alone; budget sensitivity.</span></span></li>
+      <li><span class="sn">6.8</span><span class="st">Runtime and cost<span class="chip have">evidence in hand</span><span class="note">~8 minutes of search plus ~10 minutes of full-fidelity re-measurement per class; no retain-set training loop, no optimiser state.</span></span></li>
+    </ol>
+  </section>
+
+  <section class="ch" id="c7">
+    <div class="ch-head">
+      <div class="ch-num">CH 7</div>
+      <div>
+        <h3>Analysis and Discussion</h3>
+        <p class="ch-job">Where the dissertation is won. The results are mixed; the analysis is what turns mixed results into a thesis.</p>
+      </div>
+      <div class="budget">2,600 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">7.1</span><span class="st">RQ1 &mdash; structure is a precondition, not a correlate<span class="chip have">evidence in hand</span><span class="note">The falsifiable prediction from Chapter 1 survived its test. Say what would have refuted it.</span></span></li>
+      <li><span class="sn">7.2</span><span class="st">RQ3 &mdash; what predicts per-class success<span class="chip gate">needs an experiment</span><span class="note">Regress per-class <code>ACC_f</code> on the activation-contrast statistic and on class confusability. If the ten points fall on a line, the method's failure mode becomes a property of the data that can be predicted before any unlearning is attempted. This is the strongest contribution available to you.</span></span></li>
+      <li><span class="sn">7.3</span><span class="st">The truck counterexample<span class="chip have">evidence in hand</span><span class="note">42.10 pure, 30.90 hybrid, against a 7.55 mean &mdash; the largest absolute gain of any class and still the worst result. Refinement narrows the gap; it does not close it. Give it its own section and let it stand.</span></span></li>
+      <li><span class="sn">7.4</span><span class="st">The membership-inference discrepancy<span class="note">Anchor MIA reads 92&ndash;95% where your own AUC sits near 0.55 on the same models. Retraining scoring exactly 100.00 is evidence the anchor metric is saturated, not a target to hit. A genuine methodological observation that costs only writing.</span></span></li>
+      <li><span class="sn">7.5</span><span class="st">The forgetting&ndash;retention frontier<span class="note">What the front's shape says about the trade-off, and where <code>C*</code> sits on it &mdash; including whether a different selection rule would serve a deployer better than the composite.</span></span></li>
+      <li><span class="sn">7.6</span><span class="st">Positioning: what MED-US buys and what it costs<span class="note">Argue the axis you win on &mdash; no gradients, no retain-set loop, an explicit Pareto front instead of a single operating point &mdash; while conceding <code>ACC_f</code> plainly.</span></span></li>
+      <li><span class="sn">7.7</span><span class="st">Threats to validity<span class="note">Internal: selection protocol, a single <code>W_0</code>. External: one dataset, one architecture. Construct: what MIA certifies. Conclusion: ten classes, few seeds.</span></span></li>
+      <li><span class="sn">7.8</span><span class="st">Limitations<span class="note">Distinct from 7.7 &mdash; what the method cannot do, rather than what the study might have got wrong.</span></span></li>
+    </ol>
+  </section>
+
+  <section class="ch" id="c8">
+    <div class="ch-head">
+      <div class="ch-num">CH 8</div>
+      <div>
+        <h3>Conclusion and Future Work</h3>
+        <p class="ch-job">Answer the four questions in the order they were asked, and claim exactly what the evidence supports.</p>
+      </div>
+      <div class="budget">1,000 w</div>
+    </div>
+    <ol class="subs">
+      <li><span class="sn">8.1</span><span class="st">The research questions answered<span class="note">One short passage each, RQ1&ndash;RQ4, each with its verdict &mdash; including the partial answer to RQ2.</span></span></li>
+      <li><span class="sn">8.2</span><span class="st">Contributions restated against the evidence</span></li>
+      <li><span class="sn">8.3</span><span class="st">Future work<span class="note">A second architecture and dataset; a stronger attack (U-LiRA) in place of the saturated MIA; turning the structure statistic into a pre-flight test that predicts whether a class is unlearnable by editing at all; multi-class and sequential forgetting.</span></span></li>
+      <li><span class="sn">8.4</span><span class="st">Closing</span></li>
+    </ol>
+  </section>
+
+  <h2 class="divider">End matter</h2>
+  <section class="matter" id="back">
+    <h3>Back matter</h3>
+    <ul>
+      <li>References<span>Per school guidance; roughly 45&ndash;60 entries</span></li>
+      <li>Appendix A &mdash; Per-class full results<span>Ten anchor-metric tables, pure and hybrid</span></li>
+      <li>Appendix B &mdash; Configuration listings<span>One representative per-class YAML, in full</span></li>
+      <li>Appendix C &mdash; Reference training<span>Logs, validation verdicts, sha256 table</span></li>
+      <li>Appendix D &mdash; Reproducibility<span>The artifact manifest, and what is and is not in the repository</span></li>
+      <li>Appendix E &mdash; Extended figures<span>All ten Pareto fronts at full size</span></li>
+      <li>Appendix F &mdash; Ethics and data statement<span>Public dataset, no human subjects, the school's form</span></li>
+    </ul>
+  </section>
+
+  <footer class="end">
+    <p><strong>On the word budget.</strong> 18,000 words is an assumption &mdash; confirm it against your handbook and rescale proportionally. The allocation is deliberately lopsided: Background and Results take 39% between them, and Analysis is given nearly as much room as Methodology, because the results are mixed and the reading of them is the contribution.</p>
+    <p><strong>On ordering.</strong> Draft 4, 5 and 6 first; they are closest to work already done. Chapter 1 is written last, once you know what Chapter 7 concluded. The eleven <span class="chip gate">needs an experiment</span> markers are the outstanding work, and every one sits in a chapter you can draft around in the meantime.</p>
+  </footer>
+</main>
+</div>
+</div>

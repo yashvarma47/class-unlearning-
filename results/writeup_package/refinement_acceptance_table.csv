@@ -1,0 +1,11 @@
+class_id,class_name,attempted,accepted,parameter_movement,movement_budget,buffer_movement,batchnorm_frozen,batchnorm_counters_changed,retain_test_drop,check_forget_improved,check_retain_drop,check_no_collapse,check_edit_cost,check_parameter_movement,check_bn_buffers
+0,airplane,no,n/a (no-op),,,,,,,,,,,,
+1,automobile,yes,accepted,0.000368,0.040000,0.000000,True,0,0.000778,True,True,True,True,True,True
+2,bird,yes,accepted,0.000343,0.040000,0.000000,True,0,0.002222,True,True,True,True,True,True
+3,cat,yes,accepted,0.000303,0.040000,0.000000,True,0,0.002444,True,True,True,True,True,True
+4,deer,yes,accepted,0.000373,0.040000,0.000000,True,0,0.001111,True,True,True,True,True,True
+5,dog,yes,accepted,0.000357,0.040000,0.000000,True,0,0.000556,True,True,True,True,True,True
+6,frog,yes,accepted,0.000420,0.040000,0.000000,True,0,-0.000333,True,True,True,True,True,True
+7,horse,yes,accepted,0.000394,0.040000,0.000000,True,0,0.002111,True,True,True,True,True,True
+8,ship,yes,accepted,0.000409,0.040000,0.000000,True,0,0.000889,True,True,True,True,True,True
+9,truck,yes,accepted,0.000307,0.040000,0.000000,True,0,0.002333,True,True,True,True,True,True
