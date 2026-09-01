@@ -1,0 +1,788 @@
+% ---------------------------------------------------------------------------
+% Chapter 5: Experimental Study
+% MSc dissertation: Multi-Objective Evolutionary Design of Unlearning
+% Strategies (MED-US)
+%
+% Evidence base: results/writeup_package/, results/literature_alignment/,
+% results/analysis/class_structure/, results/search/plan_a_*/summary.json.
+% Every numeric claim in this chapter is traced in
+% dissertation/notes/chapter5_evidence_map.md.
+%
+% Packages assumed by this chapter: booktabs, graphicx, siunitx (optional),
+% amsmath, csvsimple (optional, if tables are loaded directly from CSV).
+% ---------------------------------------------------------------------------
+
+\chapter{Experimental Study}
+\label{ch:experimental-study}
+
+\section{Introduction}
+\label{sec:exp-intro}
+
+This chapter reports the empirical behaviour of MED-US across ten independent
+experiments, one for each CIFAR-10 class, together with the reference models they
+are measured against, the benchmark they are compared with, and a separate
+post-search refinement variant.
+
+The chapter is organised so that measurement precedes interpretation.
+Sections~\ref{sec:exp-setup} to \ref{sec:exp-reference} establish the setting and
+the gold standard; Sections~\ref{sec:exp-pure} to \ref{sec:exp-operators} report
+results against the research questions posed in Chapter~\ref{ch:introduction};
+Section~\ref{sec:exp-truck} is a case study of the single class on which the
+method performs worst; and Section~\ref{sec:exp-summary} consolidates the
+findings.
+
+Two commitments shape the presentation. First, the pure gradient-free method and
+the hybrid refinement are reported separately throughout, because they make
+different assumptions and only one is comparable with the gradient-free
+literature. Second, results that do not favour the method are given the same
+space as those that do: the forgetting performance reported below is substantially
+weaker than the published state of the art, and the class on which the method
+performs least well is given a dedicated section.
+
+\section{Experimental Setup}
+\label{sec:exp-setup}
+
+\subsection{Hardware and software}
+
+All searches, refinements, analyses and figures were produced on a single
+workstation with an NVIDIA GeForce GTX 1650 (4.0\,GB VRAM, compute capability
+7.5), an AMD Ryzen 5 3550H processor (4 cores, 8 threads) and 13.9\,GB of system
+memory, running Windows 11. The software stack was Python 3.11, PyTorch 2.5.1
+with CUDA 12.1, and torchvision 0.20.1.
+
+Automatic mixed precision was deliberately disabled. Measured on this hardware
+with ResNet-18 and CIFAR-10 at batch size 64, fp32 throughput was 440 samples per
+second with a finite loss, while fp16 achieved 165 samples per second and produced
+a NaN loss inside \texttt{layer4}. The GTX 1650 is the one Turing part without
+tensor cores, so half precision has no fast path on it, and all experiments ran in
+fp32.
+
+The retain-only reference models were trained separately on Kaggle using NVIDIA
+Tesla T4 accelerators, since ten full training runs were not practical on the
+local GPU within the project timeline. That training is described in
+Section~\ref{sec:exp-reference}.
+
+\subsection{Determinism and reproducibility}
+
+Deterministic algorithms are enforced inside the evaluator, so that evaluating
+the same chromosome twice yields identical objective values. This property makes
+the objective cache sound, since distinct genomes that decode to the same strategy
+can be served from cache without altering the search, and it also permits a
+selected candidate to be reconstructed from its stored chromosome and re-measured,
+a check reported in Section~\ref{sec:exp-truck}.
+
+Every search used seed 42. Search state, including the random number generator
+stream, was checkpointed once per generation so that an interrupted run could be
+resumed as the same experiment rather than as a new one.
+
+\section{Dataset, Model, and Forgetting Protocol}
+\label{sec:exp-data}
+
+\subsection{Class-level unlearning on CIFAR-10}
+
+The task in this dissertation is \emph{class-level} unlearning. Given a model
+trained on all ten CIFAR-10 classes, the objective is to produce a model that
+behaves as though one entire class had never been present in its training data,
+while its behaviour on the remaining nine classes is preserved.
+
+This differs from the instance-level setting, in which the forget set is a random
+subset of training images drawn from across all classes. The distinction is not
+cosmetic: as established in Chapter~\ref{ch:medus}, an instance-level forget set
+shares its features, and therefore its weights, with the retained data, leaving no
+forget-specific structure for a weight edit to remove.
+
+\subsection{Notation and splits}
+
+\begin{description}
+  \item[$D_f$] The forget set: every image of the single target class. In
+    CIFAR-10 this is 5{,}000 training images and 1{,}000 held-out test images.
+  \item[$D_r$] The retain set: every image of the remaining nine classes. This is
+    45{,}000 training images and 9{,}000 held-out test images.
+  \item[$W_0$] The original model, trained on the complete CIFAR-10 training set
+    and therefore on $D_f$ as well as $D_r$. There is one $W_0$, shared by all ten
+    experiments.
+  \item[$W_{ref}$] The retain-only reference model, trained from scratch on
+    $D_{r,\text{train}}$ alone. It has never seen a single image of the target
+    class. There are ten of these, one per class.
+  \item[$C^{*}$] The candidate strategy selected from the Pareto front produced by
+    the search, and the model that strategy produces when applied to $W_0$.
+\end{description}
+
+Because CIFAR-10 is balanced, these counts are identical for every class. The
+split requires no random seed and no stratification, because no sampling is
+involved: the class label determines the partition entirely. Splits are stored as
+version-controlled index lists, and every split inside every imported reference
+bundle was compared byte for byte against the local split before the corresponding
+checkpoint was accepted.
+
+\subsection{Model}
+
+All experiments use ResNet-18 in its CIFAR variant, with a single
+$3\times3$ stride-1 stem convolution and no initial max-pooling layer. The
+torchvision stem, designed for $224\times224$ inputs, downsamples by a factor of
+four before the first residual stage and discards most of the spatial information
+in a $32\times32$ image. The CIFAR variant is the convention used by the line of
+work from which this project's operators are drawn
+[CITE: Fan et al., year]; [CITE: Kodge et al., year].
+
+The network has 11{,}173{,}962 trainable parameters distributed across six layer
+groups. The distribution is highly uneven: \texttt{layer4} alone holds
+8{,}393{,}728 parameters, or 75.12\% of the model. This concentration is the
+reason the edit-cost objective introduced in Chapter~\ref{ch:medus} is normalised
+rather than absolute.
+
+$W_0$ was trained for 200 epochs with SGD at learning rate 0.1, momentum 0.9 and
+weight decay $5\times10^{-4}$, with the learning rate decayed by a factor of ten
+every 40 epochs. It reaches 94.79\% test accuracy.
+
+\section{Reference Model Validation}
+\label{sec:exp-reference}
+
+\subsection{Why the reference matters}
+
+$W_{ref}$ is the empirical target of the whole method. The goal is not zero
+accuracy on the forget class: a model driven to zero has learned to actively avoid
+the correct answer, which is itself a detectable signature, whereas a model that
+never saw the class misclassifies it as any naive model would. The target is
+therefore the \emph{gap} to $W_{ref}$, and $f_1$ measures that gap as a divergence
+between predictive distributions. Since an unsound reference would invalidate
+every result that follows, the ten reference models were validated before any
+search was run.
+
+\subsection{Training protocol}
+
+Each $W_{ref}$ was trained from scratch on its own $D_{r,\text{train}}$ of 45{,}000
+images, for 200 epochs, at seed 42, using the same optimiser settings as $W_0$.
+Training took approximately 2.32 hours per model on a Tesla T4.
+
+Checkpoint selection used $D_{r,\text{test}}$ accuracy, with $D_{r,\text{test}}$
+loss as tie-breaker. Forget-class test accuracy was logged every epoch as a
+diagnostic but never influenced selection. This matters more than it may appear.
+Selecting on full-test accuracy would be both diluted, since one tenth of the test
+set belongs to a class the reference never trained on, and actively backwards: the
+forget-class logit is never positively trained but still fluctuates, so an epoch
+that happens to place a few more forget-class images into that class would score
+higher. Such a rule would reward the reference for recognising precisely the thing
+it must never have seen.
+
+Reference training was distributed across three people and seven Kaggle output
+bundles, with one class trained locally. Each imported bundle was validated by an
+automated checker before installation, and each checkpoint's SHA-256 hash was
+recorded.
+
+\subsection{Validation outcome}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Retain-only reference models for all ten CIFAR-10 classes. Each model
+  was trained on $D_{r,\text{train}}$ only. Forget-class test accuracy is 0.0000
+  for all ten, which is the correctness condition rather than a result.}
+  \label{tab:reference-validation}
+  % PLACEHOLDER: reference model validation table
+  % SOURCE: results/writeup_package/reference_model_validation_table.csv
+  % COLUMNS: class_id, class_name, verdict, selected_epoch, D_f_test_acc,
+  %          D_r_test_acc, full_test_acc, sha256_prefix, source_zip
+  % Rendered version with commentary:
+  %          results/writeup_package/reference_model_validation_table.md
+\end{table}
+
+All ten models passed validation. Every one reaches a forget-class test accuracy
+of exactly 0.0000, which is the required correctness condition: a valid
+retain-only reference should not recognise held-out target-class images as the
+forgotten class.
+
+Retain-set test accuracy across the ten references is
+$0.9506 \pm 0.0057$, ranging from 0.9423 for horse to 0.9612 for cat. This spread
+is narrow, which is important because it means no class has an unusually weak or
+unusually strong gold standard that could distort its unlearning result. The
+comparison across classes reported in Section~\ref{sec:exp-pure} is therefore a
+property of the method rather than of the references.
+
+Full-test accuracy sits near 0.85 for every reference, because one class in ten is
+held out by construction. This is not a utility number and should not be read as
+one.
+
+\section{Pure MED-US Results}
+\label{sec:exp-pure}
+
+\subsection{What is being reported}
+
+Every result in this section is produced by \emph{pure} MED-US: an evolutionary
+search over layer-wise weight-editing strategies in which no gradient is ever
+computed. Connection importance is estimated from forward passes alone, and no
+model in this section has had a gradient step applied to it.
+
+For each class, NSGA-II ran with a population of 10 for 50 generations, giving a
+budget of 510 chromosome evaluations. The ten members of the final non-dominated
+front were then re-measured at full fidelity on the complete evaluation sets. A
+single selection rule was applied uniformly to all ten classes: $C^{*}$ is the
+front member maximising the composite $\mathrm{ACC}_r \times (1 - \mathrm{ACC}_f)$,
+which is the metric function used by the anchor study
+[CITE: Kodge et al., year] rather than one devised here.
+
+\subsection{Search behaviour}
+
+All ten searches completed with zero failed evaluations and produced
+non-dominated fronts of ten members each. Real evaluations per class ranged from
+212 to 319, with 191 to 298 cache hits, giving cache hit rates between 37\% and
+58\%. These hits follow directly from the latent genes in the encoding: inactive
+layer groups retain their operator and intensity values, so distinct genomes
+decode to the same strategy and can be served from cache.
+
+\subsection{Per-class results}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Pure MED-US across all ten CIFAR-10 classes. Every row is gradient-free
+  weight surgery. $C^{*}$ was selected by one rule applied uniformly: the front
+  member maximising the composite $\mathrm{ACC}_r \times (1 - \mathrm{ACC}_f)$.}
+  \label{tab:pure-ten-class}
+  % PLACEHOLDER: pure MED-US 10-class table
+  % SOURCE: results/writeup_package/pure_medus_10_class_table.csv
+  % COLUMNS: class_id, class_name, front_position, operators, ACC_r, ACC_f,
+  %          composite, MIA, selectivity_S, f1_js, f2_retain_train_loss,
+  %          f3_edit_cost, search_minutes
+  % Rendered version: results/writeup_package/pure_medus_10_class_table.md
+\end{table}
+
+Across the ten classes, pure MED-US achieves a retain accuracy of
+$93.84 \pm 1.15$, a forget accuracy of $12.55 \pm 11.57$, a composite of
+$82.09 \pm 11.00$ and an anchor membership-inference score of $92.54 \pm 8.62$.
+All values are percentages, and all are means over the ten per-class experiments.
+
+The $\pm$ figures require a caution that is repeated in
+Section~\ref{sec:exp-threats-forward}. They are class-to-class standard
+deviations over ten experiments at a single seed. They are \emph{not} run-to-run
+variance, and they should not be read as uncertainty estimates.
+
+\subsection{The shape of the result}
+
+The most informative feature of Table~\ref{tab:pure-ten-class} is not either mean
+but the difference in spread between them.
+
+Retention is stable. Retain accuracy varies by 3.10 percentage points across all
+ten classes, from 92.52 for frog to 95.62 for dog, with a standard deviation of
+1.15. The search does not damage the nine retained classes unpredictably.
+
+Forgetting is not stable. Forget accuracy varies by 42.10 percentage points, from
+0.00 for airplane to 42.10 for truck, with a standard deviation of 11.57, almost
+as large as the mean itself. The cost of the method is concentrated almost
+entirely in forgetting rather than in retention.
+
+Airplane is the strongest single result and the only class to reach a forget
+accuracy of exactly 0.00, matching the retain-only reference on the forgetting
+axis, with a composite of 92.86 and a membership-inference score of 100.00. Truck
+is the weakest at 42.10, and is analysed separately in
+Section~\ref{sec:exp-truck}. The gap between truck and the next worst class, bird
+at 17.90, exceeds the gap between bird and the best non-airplane class.
+
+\subsection{Selectivity}
+
+Selectivity $S$, the ratio of forget loss gained to retain loss paid, ranges from
+93.99 for truck to 4427.91 for dog, with a mean of $1053.88 \pm 1413.47$. The
+distribution is strongly skewed, and the mean should be read alongside the range
+rather than on its own.
+
+The relevant comparison is with the instance-level setting described in
+Chapter~\ref{ch:introduction}, where the highest selectivity observed across
+10{,}534 evaluated strategies was 1.158. Every one of the ten class-level results
+reported here exceeds that figure by at least an order of magnitude, and the
+strongest exceeds it by more than three. Damage under class-level unlearning is
+selective in a way that damage under instance-level unlearning was not.
+
+\begin{figure}[htbp]
+  \centering
+  % PLACEHOLDER: class_structure_analysis.png
+  % PATH: results/writeup_package/figures/class_structure_analysis.png
+  \caption{Class structure explains the regime, not the ranking. Panel A: every
+  CIFAR-10 class places between 84.1\% and 91.2\% of channels above the noise
+  floor, against 0.55\% for an instance-level forget set where chance alone gives
+  1.00\%. Panel B: that structure does not predict how hard a class is to forget.
+  Panel C: cosine similarity between per-class channel-contrast vectors recovers
+  the semantic grouping without being told it.}
+  \label{fig:class-structure}
+\end{figure}
+
+Figure~\ref{fig:class-structure} accounts for this regime change and
+simultaneously rules out the most obvious explanation for the per-class variation
+within it. Panel A confirms the precondition: every class places between 84.1\%
+and 91.2\% of channels above the noise floor of a null control, against 0.55\% for
+an instance-level forget set, where the null control gives 1.00\% by construction.
+
+Panel B tests whether the amount of structure predicts how difficult a class is to
+forget. It does not. The Pearson correlation between median signal-to-noise ratio
+and pure forget accuracy across the ten classes is $-0.04$. Truck is sixth of ten
+on median SNR and fifth on channels above the floor, yet it is by far the worst on
+forgetting, while automobile has the least structure of any class and forgets 3.3
+times better than truck.
+
+This is a negative result and it is reported as one. The measurement accounts for
+the \emph{regime}, in that class-level forget sets are amenable to weight editing
+where instance-level forget sets are not, but it does not account for the
+\emph{ranking} within that regime.
+
+\section{Benchmark Comparison}
+\label{sec:exp-benchmark}
+
+\subsection{The comparison and its limits}
+
+The anchor study for this work is [CITE: Kodge et al., year], whose primary
+setting is identical to this one: CIFAR-10, ResNet-18, single-class forgetting,
+gradient-free, and deployable without retraining. Its Table~1 reports six
+competing methods aggregated as a mean over all ten target classes, which is why
+all ten classes were swept here rather than a single representative class.
+
+One limitation must be stated before any number is compared. \textbf{The baseline
+rows are as reported in the published literature. No published unlearning baseline
+was re-implemented or re-run in this project.} The comparison therefore inherits
+every difference between two codebases, including data augmentation,
+membership-inference attack details, checkpoint selection and evaluation subsets.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Benchmark comparison, CIFAR-10 and ResNet-18, mean over all ten target
+  classes. Rows marked as reported are transcribed from the anchor study and were
+  not re-measured in this project. Rows marked as measured were produced by the
+  harness described in this chapter.}
+  \label{tab:benchmark}
+  % PLACEHOLDER: benchmark comparison table
+  % SOURCE: results/writeup_package/benchmark_comparison_table.csv
+  % COLUMNS: method, source, measured_in_this_harness, gradient_free,
+  %          ACC_r_mean, ACC_r_std, ACC_f_mean, ACC_f_std, MIA_mean, MIA_std
+  % Rendered version: results/writeup_package/benchmark_comparison_table.md
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  % PLACEHOLDER: benchmark_comparison.png
+  % PATH: results/writeup_package/figures/benchmark_comparison.png
+  \caption{Retention is competitive; forgetting is not. Each metric occupies its
+  own panel on its own scale, so the panels are not comparable with one another.
+  The anchor values are as reported and were not re-measured here. The dashed line
+  marks retraining from scratch.}
+  \label{fig:benchmark}
+\end{figure}
+
+\subsection{What the comparison shows}
+
+\textbf{Retention is competitive.} Pure MED-US holds retain accuracy at 93.84,
+which is 0.35 percentage points below the anchor's reported $94.19 \pm 0.50$ and
+sits inside the range of the published field.
+
+\textbf{Forgetting is not.} Pure MED-US reaches a forget accuracy of 12.55,
+against the anchor's reported $0.03 \pm 0.09$. The gap is 12.52 percentage points.
+This is the principal negative finding of the study and it is stated without
+qualification: on the metric that defines the task, the method reported here
+performs substantially worse than the published state of the art. It is also worse
+than the nearest
+published neighbour, UNSIR at $10.89 \pm 8.79$
+[CITE: Tarun et al., year], although that method shares this one's characteristic
+of wide per-class spread rather than uniform behaviour.
+
+\textbf{Privacy is competitive on the anchor's own metric.} The
+membership-inference score is 92.54, against the anchor's reported
+$95.50 \pm 14.23$. Section~\ref{sec:exp-summary} returns to how much weight that
+comparison can carry.
+
+\subsection{Evidence that the two harnesses measure the same quantities}
+
+The comparison is indirect, but it is not unsupported. Both harnesses measure two
+models in common: the original model and the retraining gold standard. This
+project's own measurements of those two models land within 0.10 and 0.25
+percentage points of retain accuracy of the corresponding published rows, and
+reproduce their forget accuracy and membership-inference values to within 0.10 and
+0.03 respectively. That agreement on the shared baselines is the strongest
+available evidence that the two implementations measure the same quantities. It
+remains indirect, and does not substitute for re-running the baseline methods.
+
+\section{Hybrid BN-Frozen Refinement Results}
+\label{sec:exp-hybrid}
+
+\subsection{A separate method, not a variant}
+
+The results in this section were produced by a different method from the one in
+Section~\ref{sec:exp-pure}, and are reported separately for that reason. The
+hybrid takes the pure $C^{*}$ and applies two gradient steps outside the
+evolutionary search: one clipped gradient-ascent step on $D_f$, followed by one
+repair step of gradient descent on $D_r$. Batch normalisation is frozen throughout.
+\textbf{The hybrid is therefore not gradient-free, and it is not a like-for-like
+comparator for the gradient-free benchmark in Section~\ref{sec:exp-benchmark}.}
+
+\subsection{Why batch normalisation must be frozen}
+
+An earlier, unfrozen version of this refinement was initially recorded as a
+success. It was not one. The model was left in training mode, and the eight
+batches of $D_r$ used for the repair step silently re-estimated the batch
+normalisation running statistics, undoing the operator edit, while every
+weight-based guard, parameter movement, edit cost and retain accuracy alike,
+continued to report success.
+
+The failure was invisible to every check then in place, because batch
+normalisation running statistics are buffers rather than parameters, so an edit
+undone through them leaves no trace in any weight-based measurement. The remedy
+was to hold the model in evaluation mode for both steps and to add an explicit
+acceptance check on buffer movement.
+
+\subsection{Acceptance criteria and outcome}
+
+Each refinement had to pass six checks before its checkpoint was retained: forget
+accuracy improved on $D_{f,\text{test}}$; retain test accuracy dropped by no more
+than 0.010; no utility collapse, with retain losses no more than 1.25 times their
+previous value; edit cost at most 0.3; parameter movement at most 0.0400; and
+batch normalisation buffers unchanged.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Refinement acceptance record. Nine attempts, nine accepted, zero
+  rejected. Airplane was not attempted because its pure forget accuracy is already
+  0.00.}
+  \label{tab:refinement-acceptance}
+  % PLACEHOLDER: refinement acceptance table
+  % SOURCE: results/writeup_package/refinement_acceptance_table.csv
+  % COLUMNS: class_id, class_name, attempted, accepted, parameter_movement,
+  %          movement_budget, buffer_movement, batchnorm_frozen,
+  %          batchnorm_counters_changed, retain_test_drop, and six check_* columns
+  % Rendered version: results/writeup_package/refinement_acceptance_table.md
+\end{table}
+
+Nine classes were eligible and all nine were accepted, with none rejected.
+Airplane was deliberately not attempted: its pure forget accuracy is already 0.00
+with a membership-inference score of 100.00, so a forgetting step has nothing to
+improve, and its row in the hybrid table is the unchanged pure result.
+
+Batch normalisation buffer movement was exactly 0.000000 on every accepted
+refinement, with zero counter changes. Parameter movement ranged from 0.000303 for
+cat to 0.000420 for frog against a budget of 0.0400, so every accepted refinement
+used between 0.8\% and 1.1\% of the movement permitted.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Hybrid MED-US across all ten classes. Each refined row is the pure
+  $C^{*}$ followed by one gradient-ascent step on $D_f$ and one repair step on
+  $D_r$, with batch normalisation frozen. Airplane is an unmodified pure result.}
+  \label{tab:hybrid-ten-class}
+  % PLACEHOLDER: hybrid MED-US 10-class table
+  % SOURCE: results/writeup_package/hybrid_medus_10_class_table.csv
+  % COLUMNS: class_id, class_name, source, refinement_status, operators, ACC_r,
+  %          ACC_f, composite, MIA, selectivity_S, parameter_movement,
+  %          buffer_movement
+  % Rendered version: results/writeup_package/hybrid_medus_10_class_table.md
+\end{table}
+
+Across the ten classes the hybrid achieves a retain accuracy of
+$93.72 \pm 1.12$, a forget accuracy of $7.55 \pm 8.87$, a composite of
+$86.66 \pm 8.52$ and a membership-inference score of $95.05 \pm 6.08$.
+
+\section{Pure vs Hybrid Trade-off Analysis}
+\label{sec:exp-tradeoff}
+
+\subsection{The aggregate trade}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Pure against hybrid MED-US, ten-class means. These are two different
+  methods and this table compares them; it does not merge them.}
+  \label{tab:pure-vs-hybrid}
+  % PLACEHOLDER: pure vs hybrid summary table
+  % SOURCE: results/writeup_package/pure_vs_hybrid_summary_table.csv
+  % COLUMNS: metric, n, pure_mean, pure_std, hybrid_mean, hybrid_std, delta_mean
+  % The rendered version also carries the per-class delta table:
+  %          results/writeup_package/pure_vs_hybrid_summary_table.md
+\end{table}
+
+The refinement reduces mean forget accuracy by 5.00 percentage points, from 12.55
+to 7.55, at a cost of 0.12 percentage points of mean retain accuracy. The
+composite rises by 4.58 and the membership-inference score by 2.51.
+
+Nine of the ten classes improved on the composite. The tenth is the airplane
+no-op, not a regression. No class deteriorated on any headline metric.
+
+\begin{figure}[htbp]
+  \centering
+  % PLACEHOLDER: pure_vs_hybrid_acc_f_by_class.png
+  % PATH: results/writeup_package/figures/pure_vs_hybrid_acc_f_by_class.png
+  \caption{Forget accuracy falls for every refined class. Classes are ordered by
+  pure forget accuracy, worst first, and the same order is used in
+  Figures~\ref{fig:pvh-accr} and \ref{fig:pvh-composite} so that the three can be
+  read across. Airplane is a deliberate no-op, so its two markers coincide. The
+  hybrid applies two gradient steps outside the search and is not gradient-free.}
+  \label{fig:pvh-accf}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  % PLACEHOLDER: pure_vs_hybrid_acc_r_by_class.png
+  % PATH: results/writeup_package/figures/pure_vs_hybrid_acc_r_by_class.png
+  \caption{Retention is essentially unchanged by refinement. Note the axis: the
+  entire ten-class range spans about three percentage points and no single class
+  moves by more than 0.25. Markers rather than bars are used so that a non-zero
+  axis is legitimate.}
+  \label{fig:pvh-accr}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  % PLACEHOLDER: pure_vs_hybrid_composite_by_class.png
+  % PATH: results/writeup_package/figures/pure_vs_hybrid_composite_by_class.png
+  \caption{Nine of ten classes improve on the composite. The tenth is the airplane
+  no-op rather than a regression.}
+  \label{fig:pvh-composite}
+\end{figure}
+
+\subsection{Who benefits}
+
+The refinement helps the weakest classes most, which is why the standard deviation
+narrows on every metric rather than only the mean shifting.
+
+Truck gains 11.20 percentage points of forget accuracy, the largest absolute
+improvement of any class, together with 10.24 on the composite and 9.50 on
+membership inference. Ship is the runner-up at 9.30, moving from 14.00 to 4.70 and
+finishing in a strong position with a composite of 90.05. At the other end, dog
+gains only 1.40, because at 3.30 it had comparatively little left to gain.
+
+The largest single-class retain cost is 0.2444 percentage points for cat. Frog is
+the one class whose retain accuracy improves, by 0.0333. No class exceeded the
+0.010 fractional retain-test drop enforced by the second acceptance check.
+
+\subsection{Why the two are never merged}
+
+The case for reporting the two together is not trivial, since the hybrid
+outperforms the pure method on every headline metric. Three considerations make
+the separation necessary.
+
+First, they are different methods. Pure MED-US applies no gradient at any point;
+the hybrid applies two.
+
+Second, the anchor study's method is gradient-free. Only the pure results are a
+like-for-like comparison with it, and placing a hybrid row in that comparison
+would not be a fair one.
+
+Third, reporting the hybrid's 7.55 as the result of MED-US would overstate what
+the gradient-free method achieves by 5.00 percentage points of forget accuracy and
+4.58 of composite.
+
+The hybrid addresses a narrower and distinct question: what does one constrained
+gradient step add to a gradient-free solution? The answer is 5.00 percentage
+points of forget accuracy for 0.12 of retain accuracy. It also carries a
+deployment cost, since it requires access to both $D_f$ and $D_r$ and an optimiser
+step at unlearning time, which removes part of the practical argument for a
+gradient-free method in the first place.
+
+\section{Operator Frequency Analysis}
+\label{sec:exp-operators}
+
+\subsection{The observation}
+
+\begin{figure}[htbp]
+  \centering
+  % PLACEHOLDER: operator_frequency_selected_cstar.png
+  % PATH: results/writeup_package/figures/operator_frequency_selected_cstar.png
+  \caption{MASK appears in the selected candidate for all ten classes, and no
+  other operator appears in more than four. This is a search outcome rather than a
+  design choice: all eight operators were available at equal cost in all ten
+  independent runs.}
+  \label{fig:operator-frequency}
+\end{figure}
+
+Across the ten selected candidates, the operator frequencies are MASK 10, CLIP 4,
+DAMP 3, PRUNE 2, RANDOM\_PRUNE 2, RESET 2 and QUANTIZE 1, with NOISE appearing in
+none. MASK is present in every one of the ten and is the only operator with that
+property. Three classes, deer, dog and horse, select MASK alone, and five select
+it either alone or with a single partner operator.
+
+\subsection{Why this is a result rather than a setting}
+
+All eight operators were available at equal cost in all ten searches, with
+identical configuration and no per-class tuning, so nothing in the search biased
+it towards MASK. The search converged on it independently ten times out of ten.
+
+The convergence is consistent with the mechanism this project argues for. MASK is
+the only editor-channel operator whose connection selector is the class-activation
+contrast, scoring connections by
+$|W_{ij}| \cdot (\mathrm{rms}^{f}_{j} - \mathrm{rms}^{r}_{j})$. It is therefore the
+one operator in the library that can exploit the class-specific channels the
+structure analysis in Figure~\ref{fig:class-structure} identified. PRUNE and
+RANDOM\_PRUNE pin themselves to data-free selection rules, by magnitude and at
+random respectively, and exist in the library precisely as controls: if a
+forget-informed operator could not outperform them, the forget-informed component
+would be doing nothing.
+
+\subsection{The limit of the claim}
+
+Ten runs at a single seed constitute convergent evidence, not proof. No operator
+ablation was performed: the search was not re-run with MASK removed, nor with each
+operator family in isolation, so it cannot be stated that MASK is necessary or
+that the other operators are redundant. What can be stated is that, given a free
+choice among eight operators in ten independent searches, the search selected MASK
+every time.
+
+\section{Truck Failure Analysis}
+\label{sec:exp-truck}
+
+\subsection{The failure}
+
+Truck is the worst class in this study on every headline metric, both before and
+after refinement.
+
+Its pure forget accuracy is 42.10 against a ten-class mean of 12.55, more than
+double the next worst class. Its composite is 53.80, against a next-worst of 78.10
+for bird. Its membership-inference score is 69.60, against a next-worst of 91.10
+for horse. Its selectivity is 93.99, the lowest of the ten and the only value below
+100.
+
+The refinement helps truck more than any other class, improving forget accuracy by
+11.20 percentage points, and truck is still the worst class afterwards at 30.90
+against a hybrid mean of 7.55. Refinement narrows the gap. It does not close it.
+
+\subsection{Ruling out the obvious explanation}
+
+The natural hypothesis is that truck carries less forget-specific structure than
+other classes, leaving less for the operators to remove. Tested against the
+class-structure measurement, this is false.
+
+Truck sits mid-table on both structural measures, sixth of ten on median
+signal-to-noise ratio and fifth of ten on the proportion of channels above the
+noise floor, and the correlation across the ten classes between structure
+magnitude and forget accuracy is a null $-0.04$. Automobile, which carries the
+least forget-specific structure of any CIFAR-10 class, forgets 3.3 times better
+than truck. Whatever makes truck difficult, it is not a shortage of structure.
+
+\subsection{The destination of forgotten truck images}
+
+To establish what does occur, all 1{,}000 held-out truck images were classified
+under four models and their full predicted-class distributions recorded. This is
+inference only; no model was trained, searched or refined for the analysis. The
+pure $C^{*}$ has no stored checkpoint, since the search records genomes rather
+than weights, so it was reconstructed by replaying its stored chromosome through
+the same deterministic operators. The reconstruction reproduces the published
+forget accuracy exactly, at 42.10 for the pure model and 30.90 for the hybrid,
+confirming that the analysis describes the published models rather than near
+neighbours of them.
+
+\begin{figure}[htbp]
+  \centering
+  % PLACEHOLDER: truck_failure_analysis.png
+  % PATH: results/writeup_package/figures/truck_failure_analysis.png
+  \caption{Unlearning truck moves it toward automobile, and stalls. Predicted class
+  of every held-out truck image under each of four models. A model that never saw a
+  truck sends 68.40\% of them to automobile; pure MED-US sends only 16.70\% there
+  and leaves 42.10\% still classified as truck.}
+  \label{fig:truck-failure}
+\end{figure}
+
+The pattern is consistent across all four models. The original model classifies
+95.40\% of truck images correctly as trucks. The retain-only reference, which has
+never seen a truck, sends 68.40\% of them to automobile. Pure MED-US sends only
+16.70\% to automobile and leaves 42.10\% still classified as truck. The hybrid
+moves a further 11.20 percentage points out of the truck class, of which the
+largest share arrives at automobile, raising that destination to 20.40\%.
+
+The failure is therefore not a random scattering of the forgotten class across the
+remaining nine. It is a \emph{partial movement along the truck to automobile
+axis}: the reference model and the unlearned models share the same destination,
+and the unlearned models simply do not travel as far.
+
+\subsection{Corroboration from a second measurement}
+
+An independent measurement supports the same reading. Cosine similarity between
+the per-class channel-contrast vectors, shown in panel C of
+Figure~\ref{fig:class-structure}, recovers the semantic grouping of CIFAR-10
+without being given it: vehicles group with vehicles and animals with animals.
+Within that structure, truck's nearest neighbour is automobile at 0.32, and the
+relationship is mutual. Two measurements of very different kinds, one on the
+activations of the original model and one on the predictions of four unlearned
+models, identify the same pair.
+
+\subsection{What this does not establish}
+
+These observations do not establish that inter-class similarity causes the
+difficulty, or that it predicts it. The correlation between each class's maximum
+similarity to any other class and its forget accuracy is a null $-0.08$ across the
+ten classes. More decisively, airplane is a direct counterexample: it has the
+highest similarity to another class of any of the ten, at 0.41 with ship, and it is
+the single class that reaches a forget accuracy of 0.00.
+
+The defensible claim is therefore narrower. Truck's failure is stable and
+reproducible rather than noise; it is not accounted for by the amount of
+forget-specific structure the class carries; and it coincides with truck sharing
+more of its structure with a retained class than with anything else. Why truck is
+difficult remains an open question.
+
+The case is reported in detail rather than in passing because a method with a
+stable, identifiable and mechanistically characterised failure mode is of greater
+practical value than one that fails unpredictably.
+
+\section{Summary of Experimental Findings}
+\label{sec:exp-summary}
+
+\subsection{What was established}
+
+\begin{enumerate}
+  \item All ten retain-only reference models are valid, reaching forget-class test
+    accuracy of 0.0000 with a retain-set test accuracy of $0.9506 \pm 0.0057$.
+  \item Class-level forget sets carry forget-specific structure, with 84.1\% to
+    91.2\% of channels above a null control's noise floor, against 0.55\% for the
+    instance-level setting where chance gives 1.00\%.
+  \item Pure gradient-free MED-US achieves $\mathrm{ACC}_r = 93.84 \pm 1.15$,
+    $\mathrm{ACC}_f = 12.55 \pm 11.57$, composite $= 82.09 \pm 11.00$ and
+    $\mathrm{MIA} = 92.54 \pm 8.62$ across ten classes, with zero failed searches.
+  \item Retention is competitive with the published gradient-free state of the
+    art, at 0.35 percentage points behind. Forgetting is not, at 12.52 percentage
+    points worse.
+  \item The hybrid refinement, which is not gradient-free, improves forget
+    accuracy to $7.55 \pm 8.87$ for 0.12 percentage points of retain accuracy,
+    with all nine attempts accepted and zero buffer movement throughout.
+  \item MASK appears in all ten selected candidates and no other operator appears
+    in more than four, without any operator ablation to establish necessity.
+  \item Per-class difficulty is not predicted by the amount of forget-specific
+    structure a class carries ($-0.04$), nor by its maximum similarity to another
+    class ($-0.08$).
+  \item Truck's failure is a partial movement along the truck to automobile axis,
+    corroborated by two independent measurements, and its cause remains open.
+\end{enumerate}
+
+\subsection{Threats to validity}
+\label{sec:exp-threats-forward}
+
+Four limitations bear directly on how these results should be read.
+
+\textbf{A single seed.} All results come from one seed, 42, for the original
+model, all ten references and every search. Every $\pm$ in this chapter is
+class-to-class spread across ten experiments, not run-to-run variance. Neither
+search variance nor training variance was measured.
+
+\textbf{No baseline was re-implemented.} The comparison in
+Section~\ref{sec:exp-benchmark} is against published values. It does not support
+any claim that MED-US outperforms or underperforms a specific method under
+controlled conditions.
+
+\textbf{Selection and reporting share a test set.} $C^{*}$ is chosen as the front
+member maximising the composite computed on the same held-out sets on which the
+result is subsequently reported. It is a best-of-ten selection on the reported
+metric, and no separate selection split was used. The direction of the resulting
+bias is optimistic, and its magnitude was not measured.
+
+\textbf{The membership-inference metric may be saturated.} In the anchor's own
+table, retraining scores exactly 100.00 and one competing method reaches a forget
+accuracy of 0.00 with a membership-inference score of 0.00. A metric on which the
+gold standard sits at the ceiling has limited discriminative power. This project's
+own AUC-based attack, computed on the same models, sits far closer to chance than
+an anchor score in the nineties would suggest. The two cannot be describing the
+same underlying quantity, and the anchor score should not be read as strong
+evidence of privacy.
+
+\subsection{Cost}
+
+The complete ten-class sweep required approximately 1.5 hours of search time in
+total, ranging from 6.4 to 15.5 minutes per class, with a further 9.3 to 10.9
+minutes per class for full-fidelity re-measurement of the front. End to end, a
+single class costs roughly 30 to 35 minutes on a consumer GPU. By comparison,
+training a single retain-only reference model took approximately 2.32 hours on a
+datacentre accelerator. The method requires no retraining, no optimiser state and
+no pass of gradient descent over the retain set.
+
+These figures describe the shape of the cost rather than a competitive runtime
+claim. The implementation is unoptimised: dataloader workers are disabled during
+search, evaluation is capped at three batches, and the population is evaluated
+serially rather than in parallel. A wall-clock comparison against published
+runtimes would not be like-for-like.
